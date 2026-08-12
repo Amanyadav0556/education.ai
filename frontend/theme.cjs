@@ -1,24 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import "tailwindcss";
+const fs = require('fs');
 
+let css = fs.readFileSync('src/index.css', 'utf8');
+
+const themeBlock = `
 @theme {
     --color-primary: #4f46e5;
     --color-primary-hover: #4338ca;
-
+    
     --color-bg-base: var(--background);
     --color-bg-surface: var(--surface);
     --color-bg-surface-hover: var(--surface-hover);
-
+    
     --color-text-main: var(--text-primary);
     --color-text-sub: var(--text-secondary);
     --color-text-muted: var(--text-muted);
-
+    
     --color-border-base: var(--border);
     --color-border-strong: var(--border-strong);
-
-    --color-success: #10b981;
-    --color-warning: #f59e0b;
-    --color-error: #ef4444;
 }
 
 :root {
@@ -32,7 +30,6 @@
     --border-strong: #e2e8f0;
 }
 
-:root.dark,
 .dark {
     --background: #0f1117;
     --surface: #191c24;
@@ -51,42 +48,8 @@ body {
     margin: 0;
     min-height: 100vh;
     font-weight: 500;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
+`;
 
-* {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    letter-spacing: -0.03em;
-    font-weight: 800;
-}
-
-p,
-span,
-div,
-a,
-button {
-    color: inherit;
-}
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.ambient-bg {
-    display: none;
-}
+css = css.replace(/@theme[\s\S]*?body\s*{[^}]*}/, themeBlock);
+fs.writeFileSync('src/index.css', css);

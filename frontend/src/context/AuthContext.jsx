@@ -45,8 +45,14 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const updateProfilePic = (url) => {
+        const updatedUser = { ...user, profilePic: url };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, signup, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, signup, logout, loading, updateProfilePic }}>
             {!loading && children}
         </AuthContext.Provider>
     );

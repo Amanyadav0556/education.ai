@@ -52,16 +52,14 @@ export default function DashboardLayout({ children }) {
  <h3 className="font-bold text-sm text-text-main">Notifications</h3>
  </div>
  <div className="p-2">
- <div className="p-3 hover:bg-bg-surface-hover rounded-xl transition-colors cursor-pointer flex gap-3">
+ <Link to="/exam-info" className="p-3 hover:bg-bg-surface-hover rounded-xl transition-colors cursor-pointer flex gap-3">
  <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
  <CalendarClock size={16} />
  </div>
  <div>
  <p className="text-sm font-bold text-text-main mb-0.5">SAT Exam Registration Closed</p>
  <p className="text-xs font-semibold text-text-sub leading-snug">The upcoming Oct 3 Digital SAT exam registration has successfully processed.</p>
- <p className="text-[10px] font-bold text-text-muted mt-2">Just now</p>
- </div>
- </div>
+ <p className="text-[10px] font-bold text-text-muted mt-2">Just now</p></div></Link>
  </div>
  <div className="px-4 py-3 border-t border-border-base text-center">
  <button className="text-xs font-bold text-[#836bb4] hover:underline">Mark all as read</button>

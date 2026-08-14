@@ -1,6 +1,6 @@
 import React from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Calendar, Clock, MapPin, CheckCircle2, ChevronRight, BookOpen, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, CheckCircle2, ChevronRight, BookOpen, AlertCircle, TrendingUp, Users, GraduationCap, Building2 } from 'lucide-react';
 
 export default function ExamInfo() {
     return (
@@ -125,6 +125,113 @@ export default function ExamInfo() {
                         </div>
                     </div>
                 </div>
+
+                {/* --- LAST YEAR SELECTION & CUTOFFS --- */}
+                <div className="mt-12">
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-black text-text-main flex items-center gap-2">
+                            <TrendingUp size={24} className="text-[#4f46e5]" /> Historical Insights (2025 Cycle)
+                        </h2>
+                        <p className="text-[15px] font-medium text-text-sub mt-1">Review the previous year's composite exam performance percentiles and university cutoffs.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Global Averages */}
+                        <div className="bg-bg-surface p-8 rounded-[24px] border border-border-base shadow-sm">
+                            <h3 className="font-bold text-text-main text-lg mb-6 flex items-center gap-2"><Users size={20} /> Global Demographic Performance</h3>
+                            <div className="space-y-6">
+                                <div>
+                                    <div className="flex justify-between text-sm font-bold text-text-sub mb-2">
+                                        <span>Average Math Score</span>
+                                        <span className="text-text-main">520 / 800</span>
+                                    </div>
+                                    <div className="h-2 bg-bg-surface-hover rounded-full overflow-hidden flex">
+                                        <div className="bg-[#4f46e5]" style={{ width: '65%' }}></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-sm font-bold text-text-sub mb-2">
+                                        <span>Average Reading & Writing</span>
+                                        <span className="text-text-main">530 / 800</span>
+                                    </div>
+                                    <div className="h-2 bg-bg-surface-hover rounded-full overflow-hidden flex">
+                                        <div className="bg-emerald-500" style={{ width: '66%' }}></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="flex justify-between text-sm font-bold text-text-sub mb-2">
+                                        <span>Composite Target (Top 10%)</span>
+                                        <span className="text-text-main">1350 - 1400</span>
+                                    </div>
+                                    <div className="h-2 bg-bg-surface-hover rounded-full overflow-hidden flex">
+                                        <div className="bg-orange-500" style={{ width: '85%' }}></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-8 pt-6 border-t border-border-base flex gap-4">
+                                <div className="flex-1 bg-primary/10 border border-primary/20 p-4 rounded-xl text-center">
+                                    <p className="text-[10px] font-black uppercase text-[#4f46e5] tracking-widest mb-1">Total Test Takers</p>
+                                    <p className="text-xl font-black text-text-main">~1.9 Million</p>
+                                </div>
+                                <div className="flex-1 bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl text-center">
+                                    <p className="text-[10px] font-black uppercase text-emerald-700 tracking-widest mb-1">Average Composite</p>
+                                    <p className="text-xl font-black text-text-main">1050</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Top University Cutoffs */}
+                        <div className="bg-bg-surface p-8 rounded-[24px] border border-border-base shadow-sm">
+                            <h3 className="font-bold text-text-main text-lg mb-6 flex items-center gap-2"><GraduationCap size={20} /> Estimated University Cutoffs</h3>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-4 p-4 rounded-xl border border-border-strong hover:bg-bg-surface-hover transition-colors">
+                                    <div className="w-10 h-10 bg-bg-base border border-border-strong rounded-lg flex items-center justify-center shrink-0">
+                                        <Building2 size={18} className="text-text-muted" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-text-main text-sm">Ivy League Average</h4>
+                                        <p className="text-xs font-bold text-text-muted mt-0.5">Harvard, Princeton, Yale...</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg font-black text-[#4f46e5]">1520<span className="text-text-muted text-sm font-bold">+</span></p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 p-4 rounded-xl border border-border-strong hover:bg-bg-surface-hover transition-colors">
+                                    <div className="w-10 h-10 bg-bg-base border border-border-strong rounded-lg flex items-center justify-center shrink-0">
+                                        <Building2 size={18} className="text-text-muted" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-text-main text-sm">Top Public Universities</h4>
+                                        <p className="text-xs font-bold text-text-muted mt-0.5">UC Berkeley, UMich, UVA...</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg font-black text-emerald-600">1400<span className="text-text-muted text-sm font-bold">- 1500</span></p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 p-4 rounded-xl border border-border-strong hover:bg-bg-surface-hover transition-colors">
+                                    <div className="w-10 h-10 bg-bg-base border border-border-strong rounded-lg flex items-center justify-center shrink-0">
+                                        <Building2 size={18} className="text-text-muted" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-text-main text-sm">Large State Flagships</h4>
+                                        <p className="text-xs font-bold text-text-muted mt-0.5">Penn State, Ohio State, Florida...</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg font-black text-orange-600">1250<span className="text-text-muted text-sm font-bold">- 1350</span></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="text-xs font-medium text-text-muted mt-6 text-center">
+                                Note: Most universities now practice holistic admissions. The SAT score is just one composite metric.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </DashboardLayout>
     );

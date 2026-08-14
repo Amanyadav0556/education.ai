@@ -58,6 +58,12 @@ function App() {
                 </ProtectedRoute>
             } />
 
+            <Route path="/exam-info" element={
+                <ProtectedRoute>
+                    <ExamInfo />
+                </ProtectedRoute>
+            } />
+
             <Route path="/learning-twin/deep-analysis" element={
                 <ProtectedRoute>
                     <DeepAnalysis />

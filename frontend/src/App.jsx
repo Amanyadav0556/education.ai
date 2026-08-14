@@ -11,6 +11,8 @@ import ExamInfo from './pages/ExamInfo/ExamInfo';
 import Progress from './pages/Progress/Progress';
 import StudyPlan from './pages/Study Plan/StudyPlan';
 import Profile from './pages/Profile/Profile';
+import DeepAnalysis from './pages/Analytics/DeepAnalysis';
+import ActiveTest from './pages/Practice/ActiveTest';
 
 
 function App() {
@@ -44,10 +46,21 @@ function App() {
                     <Practice />
                 </ProtectedRoute>
             } />
+            <Route path="/test/:id" element={
+                <ProtectedRoute>
+                    <ActiveTest />
+                </ProtectedRoute>
+            } />
 
             <Route path="/learning-twin" element={
                 <ProtectedRoute>
                     <LearningTwin />
+                </ProtectedRoute>
+            } />
+
+            <Route path="/learning-twin/deep-analysis" element={
+                <ProtectedRoute>
+                    <DeepAnalysis />
                 </ProtectedRoute>
             } />
 

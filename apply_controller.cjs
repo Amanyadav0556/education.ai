@@ -1,4 +1,6 @@
-const LearningTwin = require('../models/LearningTwin');
+const fs = require('fs');
+
+const code = `const LearningTwin = require('../models/LearningTwin');
 const PracticeAttempt = require('../models/PracticeAttempt');
 
 exports.getLearningTwin = async (req, res) => {
@@ -33,47 +35,53 @@ exports.getInsights = async (req, res) => {
             .populate('questionId')
             .sort({ createdAt: -1 });
 
-        // BYPASS EMPTY STATE WITH SAT DATA
+        // BYPASS EMPTY STATE
         if (!attempts || attempts.length === 0) {
             return res.json({
                 hasData: true,
                 summary: { strong: 12, improving: 5, weak: 3 },
                 topics: [
                     {
-                        topicName: "Heart of Algebra", strengthScore: 42, accuracy: 42, previousAccuracy: 38,
+                        topicName: "Binary Search", strengthScore: 42, accuracy: 42, previousAccuracy: 38,
                         isImproving: true, isDeclining: false, category: "Weak", attempts: 25, correct: 10, incorrect: 15,
-                        averageTime: 124, commonMistakes: ["Distributing negatives", "Incorrect variable isolation"],
+                        averageTime: 124, commonMistakes: ["Boundary conditions", "Incorrect loop conditions"],
                         priority: "HIGH PRIORITY", priorityReason: "Your accuracy is 42% and you have repeated struggle areas."
                     },
                     {
-                        topicName: "Problem Solving and Data Analysis", strengthScore: 65, accuracy: 67, previousAccuracy: 48,
+                        topicName: "Sliding Window", strengthScore: 65, accuracy: 67, previousAccuracy: 48,
                         isImproving: true, isDeclining: false, category: "Improving", attempts: 18, correct: 12, incorrect: 6,
-                        averageTime: 85, commonMistakes: ["Misinterpreting scatterplots"],
+                        averageTime: 85, commonMistakes: ["Window sizing logic"],
                         priority: "MEDIUM PRIORITY", priorityReason: "Your overall score is 65, keep practicing to solidify."
                     },
                     {
-                        topicName: "Passport to Advanced Math", strengthScore: 91, accuracy: 91, previousAccuracy: 88,
+                        topicName: "Arrays & Hashing", strengthScore: 91, accuracy: 91, previousAccuracy: 88,
                         isImproving: false, isDeclining: false, category: "Strong", attempts: 40, correct: 36, incorrect: 4,
                         averageTime: 45, commonMistakes: [],
                         priority: "LOW PRIORITY", priorityReason: "Your performance is mostly strong but needs occasional revision."
                     }
                 ],
                 recommendations: [
-                    { topicName: "Heart of Algebra", reason: "Recommended because your accuracy in Heart of Algebra is 42%.", difficulty: "Basics", timeEstimate: "15 mins" },
-                    { topicName: "Problem Solving and Data Analysis", reason: "Recommended because your accuracy improved from 48% to 67%.", difficulty: "Medium", timeEstimate: "20 mins" }
+                    { topicName: "Binary Search", reason: "Recommended because your accuracy in Binary Search is 42%.", difficulty: "Basics", timeEstimate: "15 mins" },
+                    { topicName: "Sliding Window", reason: "Recommended because your accuracy improved from 48% to 67%.", difficulty: "Medium", timeEstimate: "20 mins" }
                 ]
             });
         }
 
         const topicMap = {};
 
+        // Aggregate Data
         attempts.forEach(attempt => {
             if (!attempt.questionId) return;
             const topic = attempt.questionId.topic;
             if (!topicMap[topic]) {
                 topicMap[topic] = {
-                    topicName: topic, attempts: 0, correct: 0, incorrect: 0,
-                    totalTime: 0, mistakes: [], history: []
+                    topicName: topic,
+                    attempts: 0,
+                    correct: 0,
+                    incorrect: 0,
+                    totalTime: 0,
+                    mistakes: [],
+                    history: [] // stores 1 for correct, 0 for incorrect (recent first)
                 };
             }
 
@@ -93,20 +101,26 @@ exports.getInsights = async (req, res) => {
         });
 
         const topics = [];
-        let strongCount = 0; let improvingCount = 0; let weakCount = 0;
+        let strongCount = 0;
+        let improvingCount = 0;
+        let weakCount = 0;
 
         for (const [topicName, data] of Object.entries(topicMap)) {
             const accuracy = Math.round((data.correct / data.attempts) * 100);
             const chronologicalHistory = [...data.history].reverse();
-            let previousAccuracy = null; let currentAccuracy = accuracy;
-            let isImproving = false; let isDeclining = false;
+            let previousAccuracy = null;
+            let currentAccuracy = accuracy;
+            let isImproving = false;
+            let isDeclining = false;
             const mid = Math.floor(chronologicalHistory.length / 2);
             
             if (chronologicalHistory.length >= 4) {
                 const firstHalf = chronologicalHistory.slice(0, mid);
                 const secondHalf = chronologicalHistory.slice(mid);
+                
                 const prevCorrect = firstHalf.filter(x => x === 1).length;
                 previousAccuracy = Math.round((prevCorrect / firstHalf.length) * 100);
+                
                 const currCorrect = secondHalf.filter(x => x === 1).length;
                 currentAccuracy = Math.round((currCorrect / secondHalf.length) * 100);
                 if (currentAccuracy > previousAccuracy + 10) isImproving = true;
@@ -131,7 +145,7 @@ exports.getInsights = async (req, res) => {
             let priority = "LOW PRIORITY";
             if (score < 50 && data.mistakes.length > 2) priority = "HIGH PRIORITY";
             else if (score < 70) priority = "MEDIUM PRIORITY";
-            let priorityReason = priority === "HIGH PRIORITY" ? `Your accuracy is ${currentAccuracy}% and you have repeated struggle areas.` : (priority === "MEDIUM PRIORITY" ? `Your overall score is ${score}, keep practicing to solidify.` : "Your performance is mostly strong but needs occasional revision.");
+            let priorityReason = priority === "HIGH PRIORITY" ? \`Your accuracy is \${currentAccuracy}% and you have repeated struggle areas.\` : (priority === "MEDIUM PRIORITY" ? \`Your overall score is \${score}, keep practicing to solidify.\` : "Your performance is mostly strong but needs occasional revision.");
 
             topics.push({
                 topicName, strengthScore: score, accuracy: currentAccuracy, previousAccuracy, isImproving, isDeclining,
@@ -143,7 +157,7 @@ exports.getInsights = async (req, res) => {
 
         const weakTopics = topics.filter(t => t.category === "Weak" || t.category === "Improving").sort((a, b) => a.strengthScore - b.strengthScore);
         const recommendations = weakTopics.slice(0, 3).map(t => ({
-            topicName: t.topicName, reason: `Recommended because your accuracy in ${t.topicName} is ${t.accuracy}%.`,
+            topicName: t.topicName, reason: \`Recommended because your accuracy in \${t.topicName} is \${t.accuracy}%.\`,
             difficulty: t.strengthScore < 40 ? "Basics" : "Advanced", timeEstimate: "15 mins"
         }));
 
@@ -160,27 +174,27 @@ exports.getDeepAnalysis = async (req, res) => {
             .populate('questionId')
             .sort({ createdAt: -1 });
 
-        // BYPASS EMPTY STATE WITH SAT DATA
+        // BYPASS EMPTY STATE
         if (!attempts || attempts.length < 5) {
             return res.json({
                 hasData: true,
                 overall: { accuracy: 64, completionRate: 75, attempts: 142 },
-                aiSummary: "You are strong in Passport to Advanced Math and Data Analysis, but your performance drops significantly in Geometry & Trig and Heart of Algebra. Your main weakness is carefully extracting equations from word problems before calculating. Focus on translating english statements into formulas for the next 7 days.",
+                aiSummary: "You are strong in Arrays and Binary Search, but your performance drops significantly in Recursion and Sliding Window. Your main weakness is identifying the correct approach before coding. Focus on problem decomposition and pattern recognition for the next 7 days.",
                 strongTopics: [
-                    { name: "Passport to Advanced Math", accuracy: 89, t: 40, c: 35, avgTime: 45 }
+                    { name: "Arrays", accuracy: 89, t: 40, c: 35, avgTime: 45 }
                 ],
                 weakTopics: [
-                    { name: "Geometry and Trigonometry", accuracy: 55, t: 20, c: 11, avgTime: 180 },
-                    { name: "Heart of Algebra", accuracy: 48, t: 25, c: 12, avgTime: 150 }
+                    { name: "Recursion", accuracy: 55, t: 20, c: 11, avgTime: 180 },
+                    { name: "Sliding Window", accuracy: 48, t: 25, c: 12, avgTime: 150 }
                 ],
                 logicBuilding: [
-                    { issue: "Equation Extraction", advise: "Before calculating, write: 1. What variables are given? 2. What is the final unit required? 3. Can I use the graphing calculator to find intersection points?" },
-                    { issue: "Geometry Edge Cases", advise: "Before submitting, test: Are the triangles similar? Have I correctly identified the hypotenuse vs legs? Check your signs (+/-) during substitutions." }
+                    { issue: "Problem Decomposition", advise: "Before coding, write: 1. What is given? 2. What is required? 3. What are the constraints? 4. What is the brute-force approach?" },
+                    { issue: "Edge Cases", advise: "Before submitting, test: Empty input, Single element, Minimum value, Maximum value." }
                 ],
                 mistakePatterns: [
-                    "Distributing negatives incorrectly",
-                    "Missing constraints in word problems",
-                    "Calculation mistakes under time pressure"
+                    "Off-by-one errors",
+                    "Incorrect conditions",
+                    "Complexity mistakes"
                 ],
                 difficulties: {
                     Easy: { accuracy: 85, t: 50, c: 42 },
@@ -188,9 +202,9 @@ exports.getDeepAnalysis = async (req, res) => {
                     Hard: { accuracy: 25, t: 22, c: 5 }
                 },
                 actionPlan: [
-                    { priority: "Priority 1", topic: "Heart of Algebra", accuracy: 48, status: "Weak", recommendation: "Revise linear equations, systems of equations, and solve 5 Easy + 5 Medium problems." },
-                    { priority: "Priority 2", topic: "Geometry and Trigonometry", accuracy: 55, status: "Needs Improvement", recommendation: "Focus on circle theorems, similar triangles, and SOH CAH TOA relationships." },
-                    { priority: "Progression", topic: "Passport to Advanced Math", accuracy: 89, status: "Strong", recommendation: "Move from Easy problems toward Medium-Hard quadratics and focus on time optimization." }
+                    { priority: "Priority 1", topic: "Sliding Window", accuracy: 48, status: "Weak", recommendation: "Revise fixed and variable sliding-window patterns and solve 5 Easy + 5 Medium problems." },
+                    { priority: "Priority 2", topic: "Recursion", accuracy: 55, status: "Needs Improvement", recommendation: "Focus on base cases, recursive relationships and recursion-tree thinking." },
+                    { priority: "Progression", topic: "Arrays", accuracy: 89, status: "Strong", recommendation: "Move from Easy problems toward Medium problems and focus on optimization." }
                 ]
             });
         }
@@ -226,43 +240,46 @@ exports.getDeepAnalysis = async (req, res) => {
         const overallAccuracy = Math.round((totalCorrect / attempts.length) * 100);
 
         let topicsArr = Object.values(topicMap).map(t => ({
-            ...t, accuracy: Math.round((t.c / t.t) * 100), avgTime: Math.round(t.time / (t.t || 1))
+            ...t,
+            accuracy: Math.round((t.c / t.t) * 100),
+            avgTime: Math.round(t.time / (t.t || 1))
         }));
 
         let strongTopics = topicsArr.filter(t => t.accuracy >= 75).sort((a, b) => b.accuracy - a.accuracy);
         let weakTopics = topicsArr.filter(t => t.accuracy < 75).sort((a, b) => a.accuracy - b.accuracy);
 
-        let logicGuidance = []; let mistakePatterns = [];
+        let logicGuidance = [];
+        let mistakePatterns = [];
 
         if (fastIncorrect > attempts.length * 0.15) {
             mistakePatterns.push("Rushing through problem interpretation");
-            logicGuidance.push({ issue: "Careless Reading in Word Problems", advise: "Before selecting an answer, pause to ensure you fully comprehend the units. Don't rush simple 'Easy' difficulty algebra problems." });
+            logicGuidance.push({ issue: "Rushing / Careless Reading", advise: "Before selecting an answer or coding, pause to ensure you fully comprehend the constraints. Don't rush simple 'Easy' difficulty problems." });
         }
         if (totalHints > attempts.length * 0.2) {
             mistakePatterns.push("High Hint Dependency");
-            logicGuidance.push({ issue: "Formula Selection", advise: "You rely on hints frequently. Before asking for a hint, write out the known variables and see if a standard formula (like quadratic or distance) naturally fits." });
+            logicGuidance.push({ issue: "Algorithm Selection / Step-by-Step", advise: "You rely on hints frequently to get started. Before asking for a hint, write out the brute-force approach first to see if a pattern emerges naturally." });
         }
         if (slowIncorrect > attempts.length * 0.15) {
-            mistakePatterns.push("Calculation / Approach struggles");
-            logicGuidance.push({ issue: "Extensive Calculation Times", advise: "If a calculation takes longer than 2 minutes, you might be missing a shortcut or a graphing calculator application. Stop, reset, and look for patterns." });
+            mistakePatterns.push("Edge-case handling / Complexity struggles");
+            logicGuidance.push({ issue: "Edge Cases & Implementation", advise: "Before submitting, manually trace your logic against: Empty input, single elements, or extreme maximum bounds. Your extended time points to implementation bugs." });
         }
         if (mistakePatterns.length === 0) {
             mistakePatterns.push("Minor execution errors");
-            logicGuidance.push({ issue: "Minor calculation slips", advise: "Your logic appears solid, but occasionally a minus sign or fraction boundary is flipped. Keep a sharp eye on distributing negatives." });
+            logicGuidance.push({ issue: "Minor execution slips", advise: "Your logic appears solid, but occasionally a small variable or condition boundary is slightly off. Keep a sharp eye on off-by-one bounds." });
         }
 
         let actionPlan = weakTopics.slice(0, 3).map((w, i) => {
             let priorityLevel = (w.accuracy < 45) ? "Priority 1" : (w.accuracy < 60 ? "Priority 2" : "Priority 3");
             return {
                 priority: priorityLevel, topic: w.name, accuracy: w.accuracy, status: w.accuracy < 50 ? "Weak" : "Needs Improvement",
-                recommendation: `Focus on foundational formulas for ${w.name} and solve ${w.accuracy < 50 ? '5 Easy + 2 Medium' : '3 Easy + 4 Medium'} problems.`
+                recommendation: \`Focus on foundational logic for \${w.name} and solve \${w.accuracy < 50 ? '5 Easy + 2 Medium' : '3 Easy + 4 Medium'} problems.\`
             };
         });
 
         if (strongTopics.length > 0) {
             actionPlan.push({
                 priority: "Optimization", topic: strongTopics[0].name, accuracy: strongTopics[0].accuracy, status: "Strong",
-                recommendation: "Move exclusively toward Medium/Hard problems and focus on identifying word problem traps."
+                recommendation: "Move exclusively toward Medium/Hard problems and focus on optimizing time complexity."
             });
         }
 
@@ -271,8 +288,8 @@ exports.getDeepAnalysis = async (req, res) => {
         });
 
         let strongNames = strongTopics.length > 0 ? strongTopics.slice(0, 2).map(s => s.name).join(' and ') : 'various topics';
-        let weakNames = weakTopics.length > 0 ? weakTopics.slice(0, 2).map(w => w.name).join(' and ') : 'algebraic concepts';
-        let aiSummaryString = `You are strong in ${strongNames}, but your performance drops significantly in ${weakNames}. Your main pattern shows struggles with ${(mistakePatterns[0]||'equation analysis').toLowerCase()}. Focus heavily on ${weakTopics.length > 0 ? weakTopics[0].name : 'optimizing times'} for the next 7 days.`;
+        let weakNames = weakTopics.length > 0 ? weakTopics.slice(0, 2).map(w => w.name).join(' and ') : 'optimization concepts';
+        let aiSummaryString = \`You are strong in \${strongNames}, but your performance drops significantly in \${weakNames}. Your main pattern shows struggles with \${(mistakePatterns[0]||'logic analysis').toLowerCase()}. Focus heavily on \${weakTopics.length > 0 ? weakTopics[0].name : 'optimizing calculations'} for the next 7 days.\`;
 
         res.json({
             hasData: true,
@@ -286,3 +303,6 @@ exports.getDeepAnalysis = async (req, res) => {
         res.status(500).json({ error: "Failed to generate deep analysis" });
     }
 };
+`;
+
+fs.writeFileSync('backend/src/controllers/twinController.js', code);

@@ -1,4 +1,6 @@
-const LearningTwin = require('../models/LearningTwin');
+const fs = require('fs');
+
+const code = `const LearningTwin = require('../models/LearningTwin');
 const PracticeAttempt = require('../models/PracticeAttempt');
 
 exports.getLearningTwin = async (req, res) => {
@@ -131,7 +133,7 @@ exports.getInsights = async (req, res) => {
             let priority = "LOW PRIORITY";
             if (score < 50 && data.mistakes.length > 2) priority = "HIGH PRIORITY";
             else if (score < 70) priority = "MEDIUM PRIORITY";
-            let priorityReason = priority === "HIGH PRIORITY" ? `Your accuracy is ${currentAccuracy}% and you have repeated struggle areas.` : (priority === "MEDIUM PRIORITY" ? `Your overall score is ${score}, keep practicing to solidify.` : "Your performance is mostly strong but needs occasional revision.");
+            let priorityReason = priority === "HIGH PRIORITY" ? \`Your accuracy is \${currentAccuracy}% and you have repeated struggle areas.\` : (priority === "MEDIUM PRIORITY" ? \`Your overall score is \${score}, keep practicing to solidify.\` : "Your performance is mostly strong but needs occasional revision.");
 
             topics.push({
                 topicName, strengthScore: score, accuracy: currentAccuracy, previousAccuracy, isImproving, isDeclining,
@@ -143,7 +145,7 @@ exports.getInsights = async (req, res) => {
 
         const weakTopics = topics.filter(t => t.category === "Weak" || t.category === "Improving").sort((a, b) => a.strengthScore - b.strengthScore);
         const recommendations = weakTopics.slice(0, 3).map(t => ({
-            topicName: t.topicName, reason: `Recommended because your accuracy in ${t.topicName} is ${t.accuracy}%.`,
+            topicName: t.topicName, reason: \`Recommended because your accuracy in \${t.topicName} is \${t.accuracy}%.\`,
             difficulty: t.strengthScore < 40 ? "Basics" : "Advanced", timeEstimate: "15 mins"
         }));
 
@@ -255,7 +257,7 @@ exports.getDeepAnalysis = async (req, res) => {
             let priorityLevel = (w.accuracy < 45) ? "Priority 1" : (w.accuracy < 60 ? "Priority 2" : "Priority 3");
             return {
                 priority: priorityLevel, topic: w.name, accuracy: w.accuracy, status: w.accuracy < 50 ? "Weak" : "Needs Improvement",
-                recommendation: `Focus on foundational formulas for ${w.name} and solve ${w.accuracy < 50 ? '5 Easy + 2 Medium' : '3 Easy + 4 Medium'} problems.`
+                recommendation: \`Focus on foundational formulas for \${w.name} and solve \${w.accuracy < 50 ? '5 Easy + 2 Medium' : '3 Easy + 4 Medium'} problems.\`
             };
         });
 
@@ -272,7 +274,7 @@ exports.getDeepAnalysis = async (req, res) => {
 
         let strongNames = strongTopics.length > 0 ? strongTopics.slice(0, 2).map(s => s.name).join(' and ') : 'various topics';
         let weakNames = weakTopics.length > 0 ? weakTopics.slice(0, 2).map(w => w.name).join(' and ') : 'algebraic concepts';
-        let aiSummaryString = `You are strong in ${strongNames}, but your performance drops significantly in ${weakNames}. Your main pattern shows struggles with ${(mistakePatterns[0]||'equation analysis').toLowerCase()}. Focus heavily on ${weakTopics.length > 0 ? weakTopics[0].name : 'optimizing times'} for the next 7 days.`;
+        let aiSummaryString = \`You are strong in \${strongNames}, but your performance drops significantly in \${weakNames}. Your main pattern shows struggles with \${(mistakePatterns[0]||'equation analysis').toLowerCase()}. Focus heavily on \${weakTopics.length > 0 ? weakTopics[0].name : 'optimizing times'} for the next 7 days.\`;
 
         res.json({
             hasData: true,
@@ -286,3 +288,6 @@ exports.getDeepAnalysis = async (req, res) => {
         res.status(500).json({ error: "Failed to generate deep analysis" });
     }
 };
+`;
+
+fs.writeFileSync('backend/src/controllers/twinController.js', code);

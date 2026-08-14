@@ -13,5 +13,7 @@ router.post('/practice/submit', submitAttempt);
 
 // Learning Twin Routes
 router.get('/twin', getLearningTwin);
+router.get('/twin/insights', require('../controllers/twinController').getInsights);
+router.get('/twin/deep-analysis', require('../controllers/twinController').getDeepAnalysis);
 
 module.exports = router;

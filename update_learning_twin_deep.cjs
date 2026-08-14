@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+const fs = require('fs');
+
+const code = `import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import {
     BrainCircuit, MessageSquare, Calendar, Target,
@@ -11,17 +13,20 @@ import api from '../../services/api';
 
 export default function LearningTwin() {
     const [insights, setInsights] = useState(null);
+    const [deepAnalysis, setDeepAnalysis] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTopic, setActiveTopic] = useState(null);
-    const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'deep'
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [insightRes] = await Promise.all([
-                    api.get('/twin/insights').catch(() => ({ data: { hasData: false } }))
+                const [insightRes, deepRes] = await Promise.all([
+                    api.get('/twin/insights').catch(() => ({ data: { hasData: false } })),
+                    api.get('/twin/deep-analysis').catch(() => ({ data: { hasData: false } }))
                 ]);
                 setInsights(insightRes.data);
+                setDeepAnalysis(deepRes.data);
                 setLoading(false);
             } catch (err) {
                 console.error("Failed to fetch", err);
@@ -48,15 +53,16 @@ export default function LearningTwin() {
                         </div>
                         <h1 className="text-4xl lg:text-5xl font-black text-text-main leading-tight mb-2">Learning <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">Twin</span></h1>
                         <p className="text-text-sub font-medium max-w-xl text-lg mb-6">Your personalized AI mirror. It learns exactly how you study, traces your knowledge gaps, and dynamically builds your optimal path forward.</p>
-
+                        
                         <div className="inline-flex bg-bg-surface-hover p-1 rounded-2xl border border-border-strong">
-                            <button
-                                className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-primary text-white shadow-md">
+                            <button 
+                                onClick={() => setActiveTab('overview')} 
+                                className={\`px-6 py-2.5 rounded-xl font-bold text-sm transition-all \${activeTab === 'overview' ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:text-text-main'}\`}>
                                 Overview
                             </button>
-                            <button
-                                onClick={() => navigate('/learning-twin/deep-analysis')}
-                                className="px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-text-muted hover:text-text-main">
+                            <button 
+                                onClick={() => setActiveTab('deep')} 
+                                className={\`px-6 py-2.5 rounded-xl font-bold text-sm transition-all \${activeTab === 'deep' ? 'bg-primary text-white shadow-md' : 'text-text-muted hover:text-text-main'}\`}>
                                 Deep Performance Analysis
                             </button>
                         </div>
@@ -83,30 +89,30 @@ export default function LearningTwin() {
                             <Play size={16} /> Start Practice
                         </Link>
                     </motion.div>
-                ) : (
+                ) : activeTab === 'overview' ? (
                     <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-12">
-
+                        
                         {/* 1. Summary Cards */}
                         <section>
                             <h2 className="text-xl font-black text-text-main mb-6 flex items-center gap-2">
                                 <Target className="text-primary" size={24} /> Your Learning Insights
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <motion.div onClick={() => { document.getElementById('strong-topics-section')?.scrollIntoView({ behavior: 'smooth' }); }} variants={itemVariants} className="bg-green-500/10 border border-green-500/20 p-6 rounded-3xl flex items-center justify-between cursor-pointer hover:border-green-500/50 transition-colors">
+                                <motion.div variants={itemVariants} className="bg-green-500/10 border border-green-500/20 p-6 rounded-3xl flex items-center justify-between">
                                     <div>
                                         <h3 className="text-green-700 dark:text-green-400 font-extrabold text-lg mb-1">Strong Topics</h3>
                                         <p className="text-green-600/80 font-bold">{insights.summary.strong} Topics</p>
                                     </div>
                                     <div className="w-12 h-12 bg-green-500/20 text-green-600 rounded-2xl flex items-center justify-center"><CheckCircle2 size={24} /></div>
                                 </motion.div>
-                                <motion.div onClick={() => { document.getElementById('focus-topics-section')?.scrollIntoView({ behavior: 'smooth' }); }} variants={itemVariants} className="bg-blue-500/10 border border-blue-500/20 p-6 rounded-3xl flex items-center justify-between cursor-pointer hover:border-blue-500/50 transition-colors">
+                                <motion.div variants={itemVariants} className="bg-blue-500/10 border border-blue-500/20 p-6 rounded-3xl flex items-center justify-between">
                                     <div>
                                         <h3 className="text-blue-700 dark:text-blue-400 font-extrabold text-lg mb-1">Improving</h3>
                                         <p className="text-blue-600/80 font-bold">{insights.summary.improving} Topics</p>
                                     </div>
                                     <div className="w-12 h-12 bg-blue-500/20 text-blue-600 rounded-2xl flex items-center justify-center"><Activity size={24} /></div>
                                 </motion.div>
-                                <motion.div onClick={() => { document.getElementById('focus-topics-section')?.scrollIntoView({ behavior: 'smooth' }); }} variants={itemVariants} className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-3xl flex items-center justify-between cursor-pointer hover:border-amber-500/50 transition-colors">
+                                <motion.div variants={itemVariants} className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-3xl flex items-center justify-between">
                                     <div>
                                         <h3 className="text-amber-700 dark:text-amber-400 font-extrabold text-lg mb-1">Needs Attention</h3>
                                         <p className="text-amber-600/80 font-bold">{insights.summary.weak} Topics</p>
@@ -121,19 +127,19 @@ export default function LearningTwin() {
                             <div className="lg:col-span-2 space-y-12">
                                 {/* Focus On */}
                                 {insights.topics.filter(t => t.category === "Weak" || t.category === "Improving").length > 0 && (
-                                    <section id="focus-topics-section" className="scroll-mt-6">
+                                    <section>
                                         <h3 className="text-lg font-black text-text-main mb-4 flex items-center gap-2">🎯 Topics You Should Focus On</h3>
                                         <div className="space-y-4">
                                             {insights.topics.filter(t => t.category === "Weak" || (t.category === "Improving" && !t.isImproving)).map((topic) => (
                                                 <motion.div key={topic.topicName} variants={itemVariants} className="bg-bg-surface p-6 rounded-3xl border border-border-base shadow-sm relative overflow-hidden group cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setActiveTopic(topic)}>
-
+                                                    
                                                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
                                                             <h4 className="font-extrabold text-text-main text-lg">{topic.topicName}</h4>
                                                         </div>
                                                         <div className="flex gap-2">
-                                                            <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg ${topic.priority === 'HIGH PRIORITY' ? 'text-red-700 bg-red-100 dark:bg-red-900/30' : 'text-amber-700 bg-amber-100 dark:bg-amber-900/30'}`}>
+                                                            <span className={\`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg \${topic.priority === 'HIGH PRIORITY' ? 'text-red-700 bg-red-100 dark:bg-red-900/30' : 'text-amber-700 bg-amber-100 dark:bg-amber-900/30'}\`}>
                                                                 {topic.priority}
                                                             </span>
                                                         </div>
@@ -153,8 +159,8 @@ export default function LearningTwin() {
                                                             {topic.previousAccuracy !== null ? (
                                                                 <p className="text-sm font-bold flex items-center gap-1">
                                                                     <span className="text-text-sub">{topic.previousAccuracy}% → {topic.accuracy}%</span>
-                                                                    {topic.isImproving && <span className="text-green-500 flex items-center"><ArrowUpRight size={14} /> You're improving!</span>}
-                                                                    {topic.isDeclining && <span className="text-red-500 flex items-center"><ArrowDownRight size={14} /> Needs revision</span>}
+                                                                    {topic.isImproving && <span className="text-green-500 flex items-center"><ArrowUpRight size={14}/> You're improving!</span>}
+                                                                    {topic.isDeclining && <span className="text-red-500 flex items-center"><ArrowDownRight size={14}/> Needs revision</span>}
                                                                 </p>
                                                             ) : (
                                                                 <p className="text-sm font-bold text-text-sub">More data needed</p>
@@ -175,16 +181,16 @@ export default function LearningTwin() {
                                                         </div>
                                                     )}
 
-                                                    <Link to={`/practice?topic=${encodeURIComponent(topic.topicName)}`} className="inline-flex items-center justify-center w-full gap-2 bg-bg-surface-hover hover:bg-primary hover:text-white border border-border-strong py-2.5 rounded-xl text-xs font-bold transition-all" onClick={e => e.stopPropagation()}>
+                                                    <Link to={\`/practice?topic=\${encodeURIComponent(topic.topicName)}\`} className="inline-flex items-center justify-center w-full gap-2 bg-bg-surface-hover hover:bg-primary hover:text-white border border-border-strong py-2.5 rounded-xl text-xs font-bold transition-all" onClick={e => e.stopPropagation()}>
                                                         Practice Topic <ChevronRight size={14} />
                                                     </Link>
                                                 </motion.div>
                                             ))}
-
+                                            
                                             {/* Improving ones */}
                                             {insights.topics.filter(t => t.category === "Improving" && t.isImproving).map((topic) => (
                                                 <motion.div key={topic.topicName} variants={itemVariants} className="bg-bg-surface p-6 rounded-3xl border border-border-base shadow-sm relative overflow-hidden group cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setActiveTopic(topic)}>
-
+                                                    
                                                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
@@ -205,7 +211,7 @@ export default function LearningTwin() {
                                                             {topic.previousAccuracy !== null && (
                                                                 <p className="text-sm font-bold flex items-center gap-1">
                                                                     <span className="text-text-sub">{topic.previousAccuracy}% → {topic.accuracy}%</span>
-                                                                    <span className="text-green-500 flex items-center"><ArrowUpRight size={14} /> +{topic.accuracy - topic.previousAccuracy}%</span>
+                                                                    <span className="text-green-500 flex items-center"><ArrowUpRight size={14}/> +{topic.accuracy - topic.previousAccuracy}%</span>
                                                                 </p>
                                                             )}
                                                         </div>
@@ -218,7 +224,7 @@ export default function LearningTwin() {
 
                                 {/* Strong Topics */}
                                 {insights.topics.filter(t => t.category === "Strong" || t.category === "Good").length > 0 && (
-                                    <section id="strong-topics-section" className="scroll-mt-6">
+                                    <section>
                                         <h3 className="text-lg font-black text-text-main mb-4 flex items-center gap-2">🏆 Your Strong Topics</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {insights.topics.filter(t => t.category === "Strong" || t.category === "Good").map((topic) => (
@@ -237,7 +243,7 @@ export default function LearningTwin() {
                                                         </div>
                                                     </div>
                                                     <p className="text-xs font-medium text-text-sub mb-4">You've consistently performed well.</p>
-                                                    <Link to={`/practice?topic=${encodeURIComponent(topic.topicName)}`} className="inline-flex items-center justify-center w-full gap-2 bg-bg-surface-hover hover:bg-bg-surface text-text-main border border-border-strong py-2 rounded-lg text-[11px] font-bold transition-all" onClick={e => e.stopPropagation()}>
+                                                    <Link to={\`/practice?topic=\${encodeURIComponent(topic.topicName)}\`} className="inline-flex items-center justify-center w-full gap-2 bg-bg-surface-hover hover:bg-bg-surface text-text-main border border-border-strong py-2 rounded-lg text-[11px] font-bold transition-all" onClick={e => e.stopPropagation()}>
                                                         Continue Practicing
                                                     </Link>
                                                 </motion.div>
@@ -252,21 +258,21 @@ export default function LearningTwin() {
                             <div className="lg:col-span-1">
                                 <section className="sticky top-8">
                                     <h3 className="text-lg font-black text-text-main mb-4 flex items-center gap-2">💡 Recommended for You</h3>
-
+                                    
                                     <div className="bg-gradient-to-br from-bg-surface-hover to-bg-surface p-6 rounded-3xl border border-border-base shadow-sm space-y-4">
                                         {insights.recommendations?.length > 0 ? (
                                             insights.recommendations.map((rec, i) => (
                                                 <div key={i} className="bg-bg-surface p-5 rounded-2xl border border-border-strong relative">
                                                     <div className="absolute -left-3 -top-3 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center font-bold text-xs shadow-md">{i + 1}</div>
                                                     <h4 className="font-bold text-text-main mb-2">{rec.topicName} {rec.difficulty}</h4>
-
+                                                    
                                                     <div className="bg-primary/5 p-3 rounded-lg border border-primary/10 mb-4">
                                                         <p className="text-xs font-medium text-text-sub"><span className="font-bold text-primary">Reason:</span> {rec.reason}</p>
                                                     </div>
-
+                                                    
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-[10px] font-bold text-text-muted flex items-center gap-1"><Clock size={12} /> {rec.timeEstimate}</span>
-                                                        <Link to={`/practice?topic=${encodeURIComponent(rec.topicName)}`} className="text-[11px] font-bold bg-text-main text-bg-base px-4 py-1.5 rounded-lg hover:opacity-80 transition-opacity">
+                                                        <span className="text-[10px] font-bold text-text-muted flex items-center gap-1"><Clock size={12}/> {rec.timeEstimate}</span>
+                                                        <Link to={\`/practice?topic=\${encodeURIComponent(rec.topicName)}\`} className="text-[11px] font-bold bg-text-main text-bg-base px-4 py-1.5 rounded-lg hover:opacity-80 transition-opacity">
                                                             Start
                                                         </Link>
                                                     </div>
@@ -281,20 +287,128 @@ export default function LearningTwin() {
 
                         </div>
                     </motion.div>
+                ) : !deepAnalysis?.hasData ? (
+                    <motion.div variants={containerVariants} initial="hidden" animate="show" className="bg-bg-surface p-12 text-center rounded-[32px] border border-border-base shadow-sm">
+                        <BrainCircuit size={48} className="mx-auto text-primary opacity-50 mb-6" />
+                        <h2 className="text-2xl font-black text-text-main mb-3">Not enough data yet.</h2>
+                        <p className="text-text-sub font-medium max-w-lg mx-auto mb-8">Complete a few more practice sessions to unlock the Deep Performance Analytics engine.</p>
+                        <Link to="/practice" className="inline-flex items-center justify-center gap-2 bg-text-main text-bg-base py-3 px-8 rounded-xl font-bold transition-all shadow-md active:scale-95">
+                            <Play size={16} /> Start Practice
+                        </Link>
+                    </motion.div>
+                ) : (
+                    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-8">
+                        {/* DEEP ANALYSIS TAB */}
+                        
+                        {/* Personalized AI Summary */}
+                        <div className="bg-gradient-to-r from-primary to-purple-600 text-white p-8 rounded-[32px] relative overflow-hidden shadow-lg shadow-primary/20">
+                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+                            <h2 className="text-sm font-black uppercase tracking-widest text-primary-200 mb-4 flex items-center gap-2"><Sparkles size={16}/> AI Synthesis</h2>
+                            <p className="text-xl md:text-2xl font-bold leading-relaxed relative z-10">\`{deepAnalysis.aiSummary}\`</p>
+                        </div>
+
+                        {/* Top Metrics Row */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div className="bg-bg-surface p-6 rounded-3xl border border-border-base shadow-sm">
+                                <p className="text-[10px] font-black uppercase text-text-muted mb-1">Overall Accuracy</p>
+                                <p className="text-3xl font-black text-text-main">{deepAnalysis.overall?.accuracy || 0}%</p>
+                            </div>
+                            <div className="bg-bg-surface p-6 rounded-3xl border border-border-base shadow-sm">
+                                <p className="text-[10px] font-black uppercase text-text-muted mb-1">Questions Answered</p>
+                                <p className="text-3xl font-black text-text-main">{deepAnalysis.overall?.attempts || 0}</p>
+                            </div>
+                            <div className="bg-bg-surface p-6 rounded-3xl border border-border-base shadow-sm">
+                                <p className="text-[10px] font-black uppercase text-text-muted mb-1">Consistency (Days)</p>
+                                <p className="text-3xl font-black text-text-main">3<span className="text-lg text-text-sub ml-1">days</span></p>
+                            </div>
+                            <div className="bg-bg-surface p-6 rounded-3xl border border-border-base shadow-sm">
+                                <p className="text-[10px] font-black uppercase text-text-muted mb-1">Mistake Bias</p>
+                                <p className="text-xl font-bold text-red-500 pt-1 leading-tight">{deepAnalysis.mistakePatterns[0]}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            
+                            {/* Action Plan */}
+                            <div className="bg-bg-surface p-8 rounded-[32px] border border-border-base shadow-sm">
+                                <h3 className="text-2xl font-black text-text-main mb-6 flex items-center gap-2"><Target size={24} className="text-primary"/> Priority Action Plan</h3>
+                                <div className="space-y-6">
+                                    {deepAnalysis.actionPlan?.map((plan, idx) => (
+                                        <div key={idx} className="bg-bg-surface-hover border border-border-strong p-5 rounded-2xl">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <span className={\`text-[11px] font-black uppercase px-2.5 py-1 rounded-md \${plan.priority.includes('1') ? 'bg-red-100 text-red-700' : plan.priority.includes('2') ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}\`}>{plan.priority}</span>
+                                                    <h4 className="font-extrabold text-lg text-text-main">{plan.topic}</h4>
+                                                </div>
+                                                <p className="text-sm font-bold text-text-sub">{plan.accuracy}% - {plan.status}</p>
+                                            </div>
+                                            <p className="text-sm font-medium text-text-sub mb-4">{plan.recommendation}</p>
+                                            <div className="flex gap-3">
+                                                <Link to={\`/practice?topic=\${encodeURIComponent(plan.topic)}\`} className="bg-text-main hover:bg-black dark:hover:bg-white text-bg-base px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
+                                                    Practice Now <ArrowUpRight size={14}/>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Logic Building & Mistake Analysis */}
+                            <div className="space-y-8">
+                                <div className="bg-gradient-to-br from-amber-50 to-bg-surface dark:from-amber-950/20 dark:to-bg-surface p-8 rounded-[32px] border border-amber-100 dark:border-amber-900/50 shadow-sm relative overflow-hidden group">
+                                    <h3 className="text-2xl font-black text-amber-600 dark:text-amber-500 mb-6 flex items-center gap-2"><BrainCircuit size={24}/> Improve Logic Building</h3>
+                                    
+                                    <div className="space-y-4">
+                                        {deepAnalysis.logicBuilding.map((lb, idx) => (
+                                            <div key={idx} className="bg-bg-surface/80 p-5 rounded-2xl border border-white/20 dark:border-white/5 shadow-sm">
+                                                <p className="text-xs font-black uppercase text-amber-600/80 mb-2">Detected Issue: {lb.issue}</p>
+                                                <p className="text-sm font-medium text-text-main leading-relaxed">{lb.advise}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-bg-surface p-8 rounded-[32px] border border-border-base shadow-sm">
+                                    <h3 className="text-xl font-black text-text-main mb-6 flex items-center gap-2"><Layers size={22}/> Difficulty & Speed</h3>
+                                    <div className="space-y-4">
+                                        {['Easy', 'Medium', 'Hard'].map((diff) => {
+                                            const stats = deepAnalysis.difficulties[diff];
+                                            if (!stats) return null;
+                                            return (
+                                                <div key={diff} className="flex items-center gap-4">
+                                                    <div className="w-20"><p className="text-xs font-bold text-text-sub uppercase">{diff}</p></div>
+                                                    <div className="flex-1 h-3 bg-bg-surface-hover rounded-full overflow-hidden">
+                                                        <div className={\`h-full rounded-full \${diff === 'Easy'? 'bg-green-500' : diff === 'Medium'? 'bg-amber-500' : 'bg-red-500'}\`} style={{width: \`\${stats.accuracy || 0}%\`}}></div>
+                                                    </div>
+                                                    <div className="w-12 text-right"><p className="text-sm font-black text-text-main">{stats.accuracy || 0}%</p></div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="mt-8 flex gap-4">
+                                        <button className="flex-1 bg-bg-surface-hover border border-border-strong text-text-main py-3 rounded-xl text-xs font-bold hover:bg-bg-surface transition-all flex items-center justify-center gap-2"><Repeat size={16}/> Refresh Analysis</button>
+                                        <button className="flex-1 bg-bg-surface-hover border border-border-strong text-text-main py-3 rounded-xl text-xs font-bold hover:bg-bg-surface transition-all flex items-center justify-center gap-2"><BookOpen size={16}/> View All Mistakes</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </motion.div>
                 )}
+
                 {/* MODAL: Topic Detail View */}
                 <AnimatePresence>
                     {activeTopic && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setActiveTopic(null)} />
                             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-bg-surface w-full max-w-lg rounded-[32px] border border-border-base shadow-2xl relative z-10 overflow-hidden">
-
+                                
                                 <div className="p-8">
                                     <div className="flex justify-between items-start mb-6">
                                         <div>
                                             <h2 className="text-2xl font-black text-text-main mb-1">{activeTopic.topicName}</h2>
                                             <div className="flex items-center gap-2">
-                                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${activeTopic.category === 'Strong' || activeTopic.category === 'Good' ? 'bg-green-100 text-green-700' : activeTopic.category === 'Weak' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>Strength: {activeTopic.category}</span>
+                                                <span className={\`text-xs font-bold px-2 py-1 rounded-md \${activeTopic.category==='Strong'||activeTopic.category==='Good' ? 'bg-green-100 text-green-700' : activeTopic.category==='Weak' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}\`}>Strength: {activeTopic.category}</span>
                                                 <span className="text-xs font-bold text-text-muted">Score: {activeTopic.strengthScore}/100</span>
                                             </div>
                                         </div>
@@ -326,21 +440,21 @@ export default function LearningTwin() {
                                         <div className="flex items-center justify-between py-3 border-b border-border-base">
                                             <span className="text-sm font-bold text-text-sub">Recent Performance</span>
                                             <span className="text-sm font-black text-text-main">
-                                                {activeTopic.previousAccuracy !== null ? `${activeTopic.isImproving ? 'Improving' : 'Needs Work'}` : 'Not enough data'}
+                                                {activeTopic.previousAccuracy !== null ? \`\${activeTopic.isImproving ? 'Improving' : 'Needs Work'}\` : 'Not enough data'}
                                             </span>
                                         </div>
                                     </div>
 
                                     <div className="mt-8">
-                                        <p className="text-xs font-black uppercase text-text-muted mb-3 flex items-center gap-2"><Target size={14} /> Recommended Action</p>
+                                        <p className="text-xs font-black uppercase text-text-muted mb-3 flex items-center gap-2"><Target size={14}/> Recommended Action</p>
                                         <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-between">
                                             <p className="text-sm font-bold text-primary max-w-[200px]">Revise {activeTopic.topicName}</p>
-                                            <Link to={`/practice?topic=${encodeURIComponent(activeTopic.topicName)}`} className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all">Start Practice</Link>
+                                            <Link to={\`/practice?topic=\${encodeURIComponent(activeTopic.topicName)}\`} className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all">Start Practice</Link>
                                         </div>
                                     </div>
                                 </div>
                                 <button onClick={() => setActiveTopic(null)} className="absolute top-6 right-6 text-text-muted hover:text-text-main bg-bg-surface-hover p-2 rounded-full">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                                 </button>
                             </motion.div>
                         </div>
@@ -348,6 +462,8 @@ export default function LearningTwin() {
                 </AnimatePresence>
 
             </div>
-        </DashboardLayout >
+        </DashboardLayout>
     );
 }
+`;
+fs.writeFileSync('frontend/src/pages/Analytics/LearningTwin.jsx', code);

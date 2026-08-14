@@ -44,7 +44,12 @@ const startDB = async () => {
         await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 2000 });
         console.log('✅ MongoDB Connected (Local/Cloud)');
     } catch (err) {
-        console.log('⚠️ Local MongoDB Connection Failed. Booting In-Memory Database for development...');
+        console.error('⚠️ MongoDB Connection Failed:', err.message);
+        if (process.env.NODE_ENV === 'production') {
+            console.error('❌ FATAL: Cannot fallback to in-memory database in production.');
+            process.exit(1);
+        }
+        console.log('Booting In-Memory Database for development...');
         try {
             const mongoServer = await MongoMemoryServer.create();
             const memoryUri = mongoServer.getUri();
@@ -52,6 +57,7 @@ const startDB = async () => {
             console.log(`✅ In-Memory MongoDB Connected: ${memoryUri}`);
         } catch (memErr) {
             console.error('❌ FATAL: Could not boot In-Memory Database.', memErr);
+            process.exit(1);
         }
     }
 };

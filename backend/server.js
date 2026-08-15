@@ -17,7 +17,8 @@ const app = express();
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigins = [
-            process.env.FRONTEND_URL,
+            process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null,
+            'https://education-ai-hazel.vercel.app',
             'http://localhost:5173',
             'http://localhost:5174',
             'http://localhost:3000'
@@ -77,7 +78,8 @@ const fs = require('fs');
 const frontendDistPath = path.join(__dirname, '../frontend/dist');
 if (fs.existsSync(frontendDistPath)) {
     app.use(express.static(frontendDistPath));
-    app.get('*', (req, res, next) => {
+    app.use((req, res, next) => {
+        if (req.method !== 'GET') return next();
         if (req.path.startsWith('/api')) return next();
         res.sendFile(path.join(frontendDistPath, 'index.html'));
     });

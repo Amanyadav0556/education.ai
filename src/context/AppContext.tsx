@@ -1,9 +1,9 @@
 'use client';
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-export type AuthState = 'unauthenticated' | 'onboarding' | 'authenticated';
+export type AuthState = 'unauthenticated' | 'select-subject' | 'authenticated';
 export type DashboardView = 'home' | 'learning' | 'practice' | 'resources' | 'ai' | 'progress';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -12,8 +12,6 @@ export interface User {
     name: string;
     email: string;
     avatar?: string;
-    class: string;
-    subjects: string[];
     joinedAt: Date;
 }
 
@@ -60,8 +58,8 @@ export interface ChatMessage {
 }
 
 export interface ProgressData {
-    studyTime: number; // hours
-    streak: number; // days
+    studyTime: number;
+    streak: number;
     questionsAnswered: number;
     accuracy: number;
     subjectMastery: { [subjectId: string]: number };
@@ -69,7 +67,7 @@ export interface ProgressData {
     studyDays: boolean[];
 }
 
-// ─── Context ─────────────────────────────────────────────────────────────────
+// ─── Context Interface ────────────────────────────────────────────────────────
 
 interface AppContextType {
     // Auth
@@ -79,7 +77,11 @@ interface AppContextType {
     signup: (name: string, email: string, password: string) => Promise<void>;
     googleLogin: () => Promise<void>;
     logout: () => void;
-    completeOnboarding: (data: { class: string; subjects: string[] }) => void;
+
+    // Active Subject (single selected subject — persisted)
+    activeSubject: Subject | null;
+    selectSubject: (subjectId: string, customName?: string) => void;
+    changeSubject: () => void; // returns user to select-subject screen
 
     // Navigation
     currentView: DashboardView;
@@ -87,10 +89,12 @@ interface AppContextType {
     sidebarCollapsed: boolean;
     setSidebarCollapsed: (v: boolean) => void;
 
-    // Learning
-    subjects: Subject[];
-    selectedSubject: Subject | null;
-    setSelectedSubject: (s: Subject | null) => void;
+    // All available subjects data
+    allSubjects: Subject[];
+
+    // Learning drill-down (which chapter/topic is open inside Learning view)
+    learningSubject: Subject | null;
+    setLearningSubject: (s: Subject | null) => void;
     selectedChapter: Chapter | null;
     setSelectedChapter: (c: Chapter | null) => void;
     selectedTopic: Topic | null;
@@ -119,9 +123,14 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null);
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+// ─── LocalStorage Keys ────────────────────────────────────────────────────────
 
-const SUBJECTS_DATA: Subject[] = [
+const LS_ACTIVE_SUBJECT = 'eduai_active_subject';
+const LS_AUTH_USER = 'eduai_user';
+
+// ─── All Subjects Data ────────────────────────────────────────────────────────
+
+export const SUBJECTS_DATA: Subject[] = [
     {
         id: 'physics',
         name: 'Physics',
@@ -181,6 +190,14 @@ const SUBJECTS_DATA: Subject[] = [
                     { id: 'ma-2-2', title: 'Complex Numbers', completed: false, weak: true },
                     { id: 'ma-2-3', title: 'Quadratic Equations', completed: true },
                 ]
+            },
+            {
+                id: 'ma-3', title: 'Probability & Statistics', completed: false,
+                topics: [
+                    { id: 'ma-3-1', title: 'Basic Probability', completed: false, weak: true },
+                    { id: 'ma-3-2', title: 'Permutations & Combinations', completed: false },
+                    { id: 'ma-3-3', title: 'Statistics', completed: false },
+                ]
             }
         ]
     },
@@ -205,6 +222,13 @@ const SUBJECTS_DATA: Subject[] = [
                 topics: [
                     { id: 'ch-2-1', title: 'Ionic & Covalent Bonds', completed: false, weak: true },
                     { id: 'ch-2-2', title: 'VSEPR Theory', completed: false },
+                ]
+            },
+            {
+                id: 'ch-3', title: 'Organic Chemistry', completed: false,
+                topics: [
+                    { id: 'ch-3-1', title: 'Hydrocarbons', completed: false },
+                    { id: 'ch-3-2', title: 'Functional Groups', completed: false, weak: true },
                 ]
             }
         ]
@@ -248,6 +272,13 @@ const SUBJECTS_DATA: Subject[] = [
                 topics: [
                     { id: 'ge-1-1', title: 'Climate Zones', completed: false },
                     { id: 'ge-1-2', title: 'Plate Tectonics', completed: false, weak: true },
+                ]
+            },
+            {
+                id: 'ge-2', title: 'Human Geography', completed: false,
+                topics: [
+                    { id: 'ge-2-1', title: 'Population Distribution', completed: false },
+                    { id: 'ge-2-2', title: 'Urbanization', completed: false },
                 ]
             }
         ]
@@ -294,8 +325,10 @@ const SUBJECTS_DATA: Subject[] = [
                 ]
             }
         ]
-    }
+    },
 ];
+
+// ─── Quiz Questions (per subject) ─────────────────────────────────────────────
 
 const QUIZ_QUESTIONS: QuizQuestion[] = [
     {
@@ -339,7 +372,7 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
         question: "What is the powerhouse of the cell?",
         options: ['Nucleus', 'Ribosome', 'Mitochondria', 'Vacuole'],
         correct: 2,
-        explanation: "The mitochondria is called the powerhouse of the cell because it produces ATP (adenosine triphosphate) through cellular respiration, which is the primary energy currency of the cell.",
+        explanation: "The mitochondria is called the powerhouse of the cell because it produces ATP through cellular respiration, which is the primary energy currency of the cell.",
         subject: 'Chemistry',
         difficulty: 'easy'
     },
@@ -348,18 +381,47 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
         question: "In which layer of the atmosphere does weather occur?",
         options: ['Stratosphere', 'Mesosphere', 'Troposphere', 'Thermosphere'],
         correct: 2,
-        explanation: "Weather phenomena occur in the Troposphere, the lowest layer of Earth's atmosphere (0-12 km). This is where most of Earth's water vapor and atmospheric mass is found.",
+        explanation: "Weather phenomena occur in the Troposphere, the lowest layer of Earth's atmosphere (0–12 km). Most of Earth's water vapor and atmospheric mass is found here.",
+        subject: 'Geography',
+        difficulty: 'medium'
+    },
+    {
+        id: 'q7',
+        question: "What is the value of π (pi) to two decimal places?",
+        options: ['3.12', '3.14', '3.16', '3.18'],
+        correct: 1,
+        explanation: "π (pi) ≈ 3.14159... To two decimal places it is 3.14. It represents the ratio of a circle's circumference to its diameter.",
+        subject: 'Mathematics',
+        difficulty: 'easy'
+    },
+    {
+        id: 'q8',
+        question: "Which force keeps planets in orbit around the Sun?",
+        options: ['Magnetic Force', 'Nuclear Force', 'Gravitational Force', 'Electromagnetic Force'],
+        correct: 2,
+        explanation: "Gravitational force, described by Newton's Law of Universal Gravitation, keeps planets in orbit by providing the centripetal acceleration needed for circular motion.",
+        subject: 'Physics',
+        difficulty: 'easy'
+    },
+    {
+        id: 'q9',
+        question: "What is a figure of speech where a comparison is made using 'like' or 'as'?",
+        options: ['Metaphor', 'Simile', 'Hyperbole', 'Alliteration'],
+        correct: 1,
+        explanation: "A simile makes a comparison using 'like' or 'as', e.g., 'brave as a lion'. A metaphor makes the same comparison directly without those words.",
+        subject: 'English',
+        difficulty: 'easy'
+    },
+    {
+        id: 'q10',
+        question: "Which continent has the highest number of countries?",
+        options: ['Asia', 'Europe', 'Africa', 'South America'],
+        correct: 2,
+        explanation: "Africa has the most countries of any continent with 54 recognized sovereign states, followed by Asia with 48 countries.",
         subject: 'Geography',
         difficulty: 'medium'
     },
 ];
-
-const AI_RESPONSES: { [key: string]: string } = {
-    default: "I'm your personal AI tutor! I can explain concepts, solve doubts, generate practice questions, and create personalized study plans. What would you like to learn today? 🎓",
-    physics: "📡 **Physics Explained!**\n\nGreat question! Physics is the study of matter, energy, and the fundamental forces of nature. Let me break this down for you with clear examples and visual explanations.\n\n**Key Concepts I can help with:**\n- Newton's Laws of Motion\n- Thermodynamics\n- Waves and Optics\n- Electromagnetism\n- Quantum Physics\n\nWhich topic would you like me to deep-dive into?",
-    math: "📐 **Mathematics Made Easy!**\n\nMath is all about patterns and logical reasoning. Here's how I approach it:\n\n1. **Understand the concept** - Not just the formula\n2. **Practice step-by-step** - Break complex problems down\n3. **Real-world applications** - See why it matters\n\nWould you like me to solve a specific problem or explain a concept?",
-    explain: "🎯 **Concept Explanation Ready!**\n\nHere's a comprehensive breakdown:\n\n**Core Principle:**\nEvery scientific concept builds on fundamentals. I'll explain it from the ground up with:\n\n✅ Simple analogies you can relate to\n✅ Step-by-step derivations\n✅ Common misconceptions cleared\n✅ Practice problems to test understanding\n\nWhat specific concept or topic needs clarification?",
-};
 
 const PROGRESS_DATA: ProgressData = {
     studyTime: 47,
@@ -374,6 +436,7 @@ const PROGRESS_DATA: ProgressData = {
         geography: 38,
         english: 78,
         sports: 92,
+        other: 50,
     },
     weakTopics: [
         { topic: 'Circular Motion', subject: 'Physics' },
@@ -385,100 +448,252 @@ const PROGRESS_DATA: ProgressData = {
     studyDays: [true, true, false, true, true, true, true, false, true, true, true, true, false, true, false, true, true, true, true, false, true],
 };
 
+// ─── Safe localStorage helpers ────────────────────────────────────────────────
+
+function lsGet(key: string): string | null {
+    try { return localStorage.getItem(key); } catch { return null; }
+}
+function lsSet(key: string, val: string) {
+    try { localStorage.setItem(key, val); } catch { /* noop */ }
+}
+function lsRemove(key: string) {
+    try { localStorage.removeItem(key); } catch { /* noop */ }
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function AppProvider({ children }: { children: ReactNode }) {
+    // Hydrate from localStorage on first render (client only)
     const [authState, setAuthState] = useState<AuthState>('unauthenticated');
     const [user, setUser] = useState<User | null>(null);
+    const [activeSubject, setActiveSubjectState] = useState<Subject | null>(null);
+    const [hydrated, setHydrated] = useState(false);
+
     const [currentView, setCurrentView] = useState<DashboardView>('home');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-    const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+
+    // Learning drill-down state
+    const [learningSubject, setLearningSubject] = useState<Subject | null>(null);
     const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+
     const [quizResults, setQuizResults] = useState<{ correct: number; total: number } | null>(null);
-    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-        {
-            id: '0',
-            role: 'ai',
-            content: AI_RESPONSES.default,
-            timestamp: new Date(),
-        }
-    ]);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [aiLoading, setAiLoading] = useState(false);
     const [notifications, setNotifications] = useState<{ id: string; message: string; type: 'info' | 'success' | 'warning' }[]>([]);
 
+    // ── Hydrate from localStorage once (avoids SSR mismatch) ──────────────────
+    useEffect(() => {
+        const savedUser = lsGet(LS_AUTH_USER);
+        const savedSubjectId = lsGet(LS_ACTIVE_SUBJECT);
+
+        if (savedUser) {
+            try {
+                const parsedUser = JSON.parse(savedUser) as User;
+                parsedUser.joinedAt = new Date(parsedUser.joinedAt);
+                setUser(parsedUser);
+
+                if (savedSubjectId) {
+                    const found = SUBJECTS_DATA.find(s => s.id === savedSubjectId);
+                    if (found) {
+                        setActiveSubjectState(found);
+                        setAuthState('authenticated');
+                    } else if (savedSubjectId.startsWith('other:')) {
+                        // custom subject
+                        const customName = savedSubjectId.replace('other:', '');
+                        const otherSubject: Subject = buildOtherSubject(customName);
+                        setActiveSubjectState(otherSubject);
+                        setAuthState('authenticated');
+                    } else {
+                        setAuthState('select-subject');
+                    }
+                } else {
+                    setAuthState('select-subject');
+                }
+            } catch {
+                lsRemove(LS_AUTH_USER);
+                lsRemove(LS_ACTIVE_SUBJECT);
+            }
+        }
+
+        setChatMessages([{
+            id: '0',
+            role: 'ai',
+            content: "I'm your personal AI tutor! Ask me anything about your subject, and I'll give you personalized explanations, practice questions, and study tips. 🎓",
+            timestamp: new Date(),
+        }]);
+        setHydrated(true);
+    }, []);
+
+    // ── Auth Actions ───────────────────────────────────────────────────────────
+
     const login = useCallback(async (email: string, _password: string) => {
         await new Promise(r => setTimeout(r, 1200));
-        setUser({
+        const u: User = {
             id: '1',
             name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
             email,
-            class: '11th Grade',
-            subjects: ['physics', 'mathematics', 'chemistry'],
             joinedAt: new Date(),
-        });
-        setAuthState('authenticated');
+        };
+        setUser(u);
+        lsSet(LS_AUTH_USER, JSON.stringify(u));
+
+        // Check if there's already a saved subject
+        const savedSubjectId = lsGet(LS_ACTIVE_SUBJECT);
+        if (savedSubjectId) {
+            const found = SUBJECTS_DATA.find(s => s.id === savedSubjectId);
+            if (found) {
+                setActiveSubjectState(found);
+                setAuthState('authenticated');
+                return;
+            }
+        }
+        setAuthState('select-subject');
     }, []);
 
     const signup = useCallback(async (name: string, email: string, _password: string) => {
         await new Promise(r => setTimeout(r, 1200));
-        setUser({
-            id: '1',
-            name,
-            email,
-            class: '',
-            subjects: [],
-            joinedAt: new Date(),
-        });
-        setAuthState('onboarding');
+        const u: User = { id: '1', name, email, joinedAt: new Date() };
+        setUser(u);
+        lsSet(LS_AUTH_USER, JSON.stringify(u));
+        // Always go to subject selection after signup
+        lsRemove(LS_ACTIVE_SUBJECT);
+        setActiveSubjectState(null);
+        setAuthState('select-subject');
     }, []);
 
     const googleLogin = useCallback(async () => {
         await new Promise(r => setTimeout(r, 800));
-        setUser({
-            id: '1',
-            name: 'Aman Yadav',
-            email: 'aman@gmail.com',
-            class: '11th Grade',
-            subjects: ['physics', 'mathematics', 'chemistry', 'english'],
-            joinedAt: new Date(),
-        });
-        setAuthState('authenticated');
+        const u: User = { id: '1', name: 'Aman Yadav', email: 'aman@gmail.com', joinedAt: new Date() };
+        setUser(u);
+        lsSet(LS_AUTH_USER, JSON.stringify(u));
+        const savedSubjectId = lsGet(LS_ACTIVE_SUBJECT);
+        if (savedSubjectId) {
+            const found = SUBJECTS_DATA.find(s => s.id === savedSubjectId);
+            if (found) {
+                setActiveSubjectState(found);
+                setAuthState('authenticated');
+                return;
+            }
+        }
+        setAuthState('select-subject');
     }, []);
 
     const logout = useCallback(() => {
         setUser(null);
+        setActiveSubjectState(null);
         setAuthState('unauthenticated');
         setCurrentView('home');
-        setChatMessages([{ id: '0', role: 'ai', content: AI_RESPONSES.default, timestamp: new Date() }]);
+        setLearningSubject(null);
+        setSelectedChapter(null);
+        setSelectedTopic(null);
+        lsRemove(LS_AUTH_USER);
+        lsRemove(LS_ACTIVE_SUBJECT);
+        setChatMessages([{
+            id: '0', role: 'ai',
+            content: "I'm your personal AI tutor! Ask me anything about your subject, and I'll give you personalized explanations, practice questions, and study tips. 🎓",
+            timestamp: new Date(),
+        }]);
     }, []);
 
-    const completeOnboarding = useCallback((data: { class: string; subjects: string[] }) => {
-        setUser(prev => prev ? { ...prev, ...data } : null);
+    // ── Subject Selection ──────────────────────────────────────────────────────
+
+    function buildOtherSubject(customName: string): Subject {
+        return {
+            id: 'other',
+            name: customName,
+            emoji: '🌟',
+            color: '#8b5cf6',
+            gradient: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+            progress: 0,
+            mastery: 0,
+            chapters: [
+                {
+                    id: 'ot-1', title: `Introduction to ${customName}`, completed: false,
+                    topics: [
+                        { id: 'ot-1-1', title: `${customName} Fundamentals`, completed: false },
+                        { id: 'ot-1-2', title: `${customName} Core Concepts`, completed: false },
+                    ]
+                }
+            ]
+        };
+    }
+
+    const selectSubject = useCallback((subjectId: string, customName?: string) => {
+        let subject: Subject;
+        if (subjectId === 'other' && customName) {
+            subject = buildOtherSubject(customName);
+            lsSet(LS_ACTIVE_SUBJECT, `other:${customName}`);
+        } else {
+            const found = SUBJECTS_DATA.find(s => s.id === subjectId);
+            if (!found) return;
+            subject = found;
+            lsSet(LS_ACTIVE_SUBJECT, subjectId);
+        }
+        setActiveSubjectState(subject);
+        setLearningSubject(null);
+        setSelectedChapter(null);
+        setSelectedTopic(null);
+        setCurrentView('home');
         setAuthState('authenticated');
+        // Update AI context greeting
+        setChatMessages([{
+            id: '0',
+            role: 'ai',
+            content: `🎓 **${subject.name} AI Tutor activated!**\n\nI'm now fully focused on **${subject.name}**. I can:\n\n• Explain any ${subject.name} concept clearly\n• Generate practice questions\n• Identify your weak areas\n• Create a personalized study plan\n\nWhat would you like to learn today?`,
+            timestamp: new Date(),
+        }]);
     }, []);
+
+    const changeSubject = useCallback(() => {
+        setAuthState('select-subject');
+    }, []);
+
+    // ── Chat ──────────────────────────────────────────────────────────────────
 
     const addChatMessage = useCallback((msg: Omit<ChatMessage, 'id' | 'timestamp'>) => {
         setChatMessages(prev => [...prev, { ...msg, id: Date.now().toString(), timestamp: new Date() }]);
     }, []);
 
     const clearChat = useCallback(() => {
-        setChatMessages([{ id: '0', role: 'ai', content: AI_RESPONSES.default, timestamp: new Date() }]);
-    }, []);
+        const subjectName = activeSubject?.name ?? 'your subject';
+        setChatMessages([{
+            id: '0', role: 'ai',
+            content: `🎓 Chat cleared! I'm still focused on **${subjectName}**. What would you like to explore?`,
+            timestamp: new Date(),
+        }]);
+    }, [activeSubject]);
 
     const sendAiMessage = useCallback(async (message: string) => {
         addChatMessage({ role: 'user', content: message });
         setAiLoading(true);
         await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+
         const lower = message.toLowerCase();
-        let response = AI_RESPONSES.default;
-        if (lower.includes('physics') || lower.includes('force') || lower.includes('motion')) response = AI_RESPONSES.physics;
-        else if (lower.includes('math') || lower.includes('calculus') || lower.includes('integral')) response = AI_RESPONSES.math;
-        else if (lower.includes('explain') || lower.includes('what is') || lower.includes('how')) response = AI_RESPONSES.explain;
-        else response = `🤖 **AI Response:**\n\nGreat question about "${message}"!\n\nBased on your learning profile, here's what I know:\n\n• This concept connects to your current studies in Physics and Mathematics\n• I've identified some related weak areas I can help strengthen\n• I'll generate personalized examples relevant to your grade level\n\nLet me provide a detailed explanation with practice problems. Would you like a step-by-step breakdown or a quick summary first?`;
+        const subjectName = activeSubject?.name ?? 'your subject';
+        const subjectId = activeSubject?.id ?? '';
+
+        let response: string;
+
+        if (lower.includes('practice') || lower.includes('question') || lower.includes('quiz')) {
+            response = `✍️ **${subjectName} Practice Questions**\n\nHere are 3 practice questions for you:\n\n**Q1 (Easy):** What is the fundamental principle behind ${subjectName}?\n**Q2 (Medium):** Explain with an example how ${subjectName} concepts apply in real life.\n**Q3 (Hard):** Solve a multi-step problem combining key ${subjectName} theorems.\n\nWould you like me to generate more questions at a specific difficulty level?`;
+        } else if (lower.includes('explain') || lower.includes('what is') || lower.includes('how') || lower.includes('why')) {
+            response = `🎯 **Explanation — ${subjectName}**\n\nGreat question! Here's a clear breakdown:\n\n**Core Concept:**\nIn ${subjectName}, this concept is fundamental to understanding advanced topics.\n\n✅ Simple analogy you can relate to\n✅ Step-by-step derivation\n✅ Common misconceptions cleared\n✅ Practice problems to test understanding\n\nWould you like me to go deeper into any part of this explanation?`;
+        } else if (lower.includes('plan') || lower.includes('schedule') || lower.includes('timetable')) {
+            response = `📅 **Personalized ${subjectName} Study Plan**\n\nBased on your progress and weak areas, here's a recommended schedule:\n\n**Today:**\n• 4:00 PM — Review weak topics (45 min)\n• 5:00 PM — Practice questions (30 min)\n\n**This Week:**\n• Focus on your lowest-mastery chapters first\n• End each session with a 5-question quiz\n• Review mistakes using AI explanations\n\nShall I generate a full 2-week plan?`;
+        } else if (subjectId === 'physics' || lower.includes('physics') || lower.includes('force') || lower.includes('motion')) {
+            response = `⚡ **Physics Explained!**\n\nPhysics is the study of matter, energy, and the fundamental forces of nature.\n\n**Key areas I can help with:**\n- Newton's Laws of Motion\n- Thermodynamics\n- Waves and Optics\n- Electromagnetism\n\nWhich topic would you like me to deep-dive into?`;
+        } else if (subjectId === 'mathematics' || lower.includes('math') || lower.includes('calculus')) {
+            response = `📐 **Mathematics Made Easy!**\n\nMath is all about patterns and logical reasoning.\n\n1. **Understand the concept** — not just the formula\n2. **Practice step-by-step** — break problems down\n3. **Real-world applications** — see why it matters\n\nWould you like me to solve a specific problem or explain a concept?`;
+        } else {
+            response = `🤖 **AI Response — ${subjectName} context**\n\nGreat question! Based on your active subject **${subjectName}**, here's what I can tell you:\n\n• This concept is central to understanding ${subjectName}\n• I've identified related areas in your current study path\n• I'll tailor my explanation to your level\n\nWould you like a step-by-step breakdown or a quick summary first?`;
+        }
+
         addChatMessage({ role: 'ai', content: response });
         setAiLoading(false);
-    }, [addChatMessage]);
+    }, [addChatMessage, activeSubject]);
+
+    // ── Notifications ─────────────────────────────────────────────────────────
 
     const addNotification = useCallback((message: string, type: 'info' | 'success' | 'warning' = 'info') => {
         const id = Date.now().toString();
@@ -486,7 +701,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), 4000);
     }, []);
 
-    const filteredSubjects = SUBJECTS_DATA.filter(s => user?.subjects?.includes(s.id) || authState !== 'authenticated' || user?.subjects?.length === 0);
+    // ── Derived quiz questions filtered to active subject ─────────────────────
+    const activeQuizQuestions = activeSubject
+        ? QUIZ_QUESTIONS.filter(q => q.subject.toLowerCase() === activeSubject.id.toLowerCase() ||
+            q.subject.toLowerCase() === activeSubject.name.toLowerCase())
+        : QUIZ_QUESTIONS;
+    // Fall back to all questions if no match
+    const quizForSubject = activeQuizQuestions.length > 0 ? activeQuizQuestions : QUIZ_QUESTIONS;
+
+    // ── Progress filtered to active subject ───────────────────────────────────
+    const activeProgress: ProgressData = activeSubject
+        ? {
+            ...PROGRESS_DATA,
+            subjectMastery: { [activeSubject.id]: PROGRESS_DATA.subjectMastery[activeSubject.id] ?? 60 },
+            weakTopics: PROGRESS_DATA.weakTopics.filter(
+                w => w.subject.toLowerCase() === activeSubject.name.toLowerCase()
+            ),
+        }
+        : PROGRESS_DATA;
+
+    if (!hydrated) return null; // Prevent SSR mismatch
 
     return (
         <AppContext.Provider value={{
@@ -496,19 +730,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
             signup,
             googleLogin,
             logout,
-            completeOnboarding,
+            activeSubject,
+            selectSubject,
+            changeSubject,
             currentView,
             setCurrentView,
             sidebarCollapsed,
             setSidebarCollapsed,
-            subjects: authState === 'authenticated' && user?.subjects?.length ? filteredSubjects : SUBJECTS_DATA,
-            selectedSubject,
-            setSelectedSubject,
+            allSubjects: SUBJECTS_DATA,
+            learningSubject,
+            setLearningSubject,
             selectedChapter,
             setSelectedChapter,
             selectedTopic,
             setSelectedTopic,
-            currentQuiz: QUIZ_QUESTIONS,
+            currentQuiz: quizForSubject,
             quizResults,
             setQuizResults,
             chatMessages,
@@ -517,7 +753,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             aiLoading,
             setAiLoading,
             sendAiMessage,
-            progress: PROGRESS_DATA,
+            progress: activeProgress,
             notifications,
             addNotification,
         }}>

@@ -11,7 +11,12 @@ const NAV_ITEMS: { id: DashboardView; label: string; icon: string; section?: str
 ];
 
 export default function Sidebar() {
-    const { currentView, setCurrentView, sidebarCollapsed, setSidebarCollapsed, user, logout } = useApp();
+    const {
+        currentView, setCurrentView,
+        sidebarCollapsed, setSidebarCollapsed,
+        user, logout,
+        activeSubject, changeSubject,
+    } = useApp();
 
     const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
 
@@ -19,7 +24,7 @@ export default function Sidebar() {
 
     return (
         <aside className={`sidebar${sidebarCollapsed ? ' collapsed' : ''}`}>
-            {/* Header */}
+            {/* Header / Brand */}
             <div className="sidebar-header">
                 <div className="sidebar-logo">🎓</div>
                 {!sidebarCollapsed && (
@@ -27,7 +32,7 @@ export default function Sidebar() {
                 )}
                 <button
                     className="btn btn-ghost btn-icon"
-                    style={{ marginLeft: 'auto', flexShrink: 0 }}
+                    style={{ marginLeft: 'auto', flexShrink: 0, fontSize: 16 }}
                     onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                     title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 >
@@ -35,8 +40,43 @@ export default function Sidebar() {
                 </button>
             </div>
 
+            {/* Active Subject indicator */}
+            {activeSubject && (
+                <div style={{
+                    margin: '8px 12px 0',
+                    padding: sidebarCollapsed ? '8px' : '10px 14px',
+                    background: `linear-gradient(135deg, ${activeSubject.color}18, ${activeSubject.color}08)`,
+                    border: `1px solid ${activeSubject.color}40`,
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                }}
+                    onClick={changeSubject}
+                    title={sidebarCollapsed ? `Active: ${activeSubject.name} — Change Subject` : undefined}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = activeSubject.color)}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = `${activeSubject.color}40`)}
+                >
+                    <span style={{ fontSize: 20, flexShrink: 0 }}>{activeSubject.emoji}</span>
+                    {!sidebarCollapsed && (
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 700 }}>Active Subject</div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {activeSubject.name}
+                            </div>
+                        </div>
+                    )}
+                    {!sidebarCollapsed && (
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }} title="Change subject">🔄</span>
+                    )}
+                </div>
+            )}
+
             {/* Navigation */}
-            <nav className="sidebar-nav">
+            <nav className="sidebar-nav" style={{ marginTop: 8 }}>
                 {NAV_ITEMS.map(item => {
                     const showSection = !sidebarCollapsed && item.section && item.section !== lastSection;
                     if (item.section) lastSection = item.section;
@@ -57,9 +97,33 @@ export default function Sidebar() {
                         </div>
                     );
                 })}
+
+                {/* Change Subject button */}
+                {!sidebarCollapsed && (
+                    <>
+                        <div className="sidebar-section-label" style={{ marginTop: 8 }}>SUBJECT</div>
+                        <button
+                            className="sidebar-item"
+                            onClick={changeSubject}
+                            title="Change your active subject"
+                        >
+                            <span className="sidebar-item-icon">🔄</span>
+                            <span>Change Subject</span>
+                        </button>
+                    </>
+                )}
+                {sidebarCollapsed && (
+                    <button
+                        className="sidebar-item"
+                        onClick={changeSubject}
+                        title="Change Subject"
+                    >
+                        <span className="sidebar-item-icon">🔄</span>
+                    </button>
+                )}
             </nav>
 
-            {/* Footer */}
+            {/* Footer — user profile */}
             <div className="sidebar-footer">
                 {!sidebarCollapsed ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -67,9 +131,8 @@ export default function Sidebar() {
                             {initials}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, truncate: true }}
-                                className="truncate">{user?.name}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{user?.class}</div>
+                            <div className="truncate" style={{ fontSize: 13, fontWeight: 600 }}>{user?.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{user?.email}</div>
                         </div>
                         <button
                             className="btn btn-ghost btn-icon"

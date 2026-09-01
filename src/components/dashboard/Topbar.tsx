@@ -2,12 +2,12 @@
 import { useApp } from '@/context/AppContext';
 
 const VIEW_TITLES: Record<string, { title: string; subtitle: string }> = {
-    home: { title: 'Dashboard', subtitle: "Here's your learning overview" },
-    learning: { title: '📚 Learning', subtitle: 'Chapters, topics & AI explanations' },
-    practice: { title: '✍️ Practice', subtitle: 'Quizzes, questions & difficulty levels' },
-    resources: { title: '📖 Resources', subtitle: 'Notes, PDFs, videos & flashcards' },
-    ai: { title: '🤖 Personal AI', subtitle: 'Your 24/7 AI tutor & mentor' },
-    progress: { title: '📊 Progress & Planner', subtitle: 'Track your mastery and plan your studies' },
+    home: { title: 'Dashboard', subtitle: "Today's overview" },
+    learning: { title: 'Learning', subtitle: 'Chapters & topics' },
+    practice: { title: 'Practice', subtitle: 'Quizzes & questions' },
+    resources: { title: 'Resources', subtitle: 'Notes, PDFs & flashcards' },
+    ai: { title: 'Personal AI', subtitle: 'Your AI tutor' },
+    progress: { title: 'Progress', subtitle: 'Mastery & planner' },
 };
 
 export default function Topbar({ marginLeft }: { marginLeft: number }) {
@@ -20,98 +20,104 @@ export default function Topbar({ marginLeft }: { marginLeft: number }) {
 
     return (
         <header className="topbar" style={{ left: marginLeft }}>
-            {/* Left: page title / greeting */}
+            {/* Left */}
             <div style={{ flex: 1, minWidth: 0 }}>
                 {currentView === 'home' ? (
                     <div>
-                        <div style={{ fontSize: 16, fontWeight: 700 }}>
-                            {greeting}, {user?.name?.split(' ')[0]}! 👋
+                        <div style={{
+                            fontFamily: 'Playfair Display, serif',
+                            fontSize: 15, fontWeight: 600,
+                            color: 'var(--stone-800)',
+                        }}>
+                            {greeting}, {user?.name?.split(' ')[0]}
                         </div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{info.subtitle}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', letterSpacing: '0.03em' }}>
+                            {info.subtitle}
+                        </div>
                     </div>
                 ) : (
                     <div>
-                        <div style={{ fontSize: 16, fontWeight: 700 }}>{info.title}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{info.subtitle}</div>
+                        <div style={{
+                            fontFamily: 'Playfair Display, serif',
+                            fontSize: 15, fontWeight: 600,
+                            color: 'var(--stone-800)',
+                        }}>{info.title}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{info.subtitle}</div>
                     </div>
                 )}
             </div>
 
-            {/* Right: active subject + stats + actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            {/* Right */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
 
-                {/* Active Subject Chip */}
+                {/* Active Subject pill */}
                 {activeSubject && (
                     <button
                         id="topbar-active-subject"
                         onClick={changeSubject}
-                        title="Change active subject"
+                        title="Change subject"
                         style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 7,
+                            display: 'flex', alignItems: 'center', gap: 7,
                             padding: '6px 14px',
-                            background: `linear-gradient(135deg, ${activeSubject.color}22, ${activeSubject.color}10)`,
-                            border: `1px solid ${activeSubject.color}55`,
-                            borderRadius: 100,
+                            background: 'var(--stone-800)',
+                            border: 'none',
+                            borderRadius: 'var(--radius-pill)',
                             cursor: 'pointer',
-                            transition: 'all 0.15s',
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: 'var(--text-primary)',
+                            fontSize: 12, fontWeight: 500,
+                            color: 'var(--cream-50)',
+                            transition: 'opacity 0.15s',
+                            fontFamily: 'DM Sans, sans-serif',
                         }}
-                        onMouseEnter={e => {
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = activeSubject.color;
-                            (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 12px ${activeSubject.color}30`;
-                        }}
-                        onMouseLeave={e => {
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = `${activeSubject.color}55`;
-                            (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
-                        }}
+                        onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+                        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
                     >
-                        <span style={{ fontSize: 16 }}>{activeSubject.emoji}</span>
+                        <span style={{ fontSize: 14 }}>{activeSubject.emoji}</span>
                         <span>{activeSubject.name}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>🔄</span>
+                        <span style={{ fontSize: 10, opacity: 0.5 }}>⇄</span>
                     </button>
                 )}
 
                 {/* Streak */}
-                <div
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '6px 12px',
-                        background: 'rgba(245,158,11,0.1)',
-                        border: '1px solid rgba(245,158,11,0.3)',
-                        borderRadius: 100,
-                        cursor: 'pointer',
-                    }}
+                <button
                     onClick={() => setCurrentView('progress')}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '6px 12px',
+                        background: 'var(--cream-200)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-pill)',
+                        cursor: 'pointer',
+                        fontSize: 12, fontWeight: 600,
+                        color: 'var(--stone-800)',
+                        fontFamily: 'DM Sans, sans-serif',
+                    }}
                 >
-                    <span>🔥</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#fcd34d' }}>{progress.streak}d streak</span>
-                </div>
+                    🔥 <span>{progress.streak}d</span>
+                </button>
 
                 {/* Accuracy */}
-                <div
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '6px 12px',
-                        background: 'rgba(99,102,241,0.1)',
-                        border: '1px solid rgba(99,102,241,0.3)',
-                        borderRadius: 100,
-                        cursor: 'pointer',
-                    }}
+                <button
                     onClick={() => setCurrentView('progress')}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '6px 12px',
+                        background: 'var(--cream-200)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-pill)',
+                        cursor: 'pointer',
+                        fontSize: 12, fontWeight: 600,
+                        color: 'var(--stone-800)',
+                        fontFamily: 'DM Sans, sans-serif',
+                    }}
                 >
-                    <span>🎯</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary-300)' }}>{progress.accuracy}%</span>
-                </div>
+                    🎯 <span>{progress.accuracy}%</span>
+                </button>
 
-                {/* Notification Bell */}
+                {/* Bell */}
                 <button
                     className="btn btn-ghost btn-icon"
-                    style={{ position: 'relative' }}
-                    onClick={() => addNotification(`New ${activeSubject?.name ?? ''} practice questions ready!`, 'info')}
+                    style={{ position: 'relative', color: 'var(--stone-600)', fontSize: 16 }}
+                    onClick={() => addNotification(`New ${activeSubject?.name ?? ''} content ready!`, 'info')}
                     title="Notifications"
                 >
                     🔔

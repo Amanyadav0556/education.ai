@@ -143,9 +143,10 @@ export const SUBJECTS_DATA: Subject[] = [
             {
                 id: 'ph-1', title: 'Mechanics', completed: true,
                 topics: [
-                    { id: 'ph-1-1', title: "Newton's Laws of Motion", completed: true },
-                    { id: 'ph-1-2', title: 'Work, Energy and Power', completed: true },
-                    { id: 'ph-1-3', title: 'Circular Motion', completed: false, weak: true },
+                    { id: 'ph-1-1', title: "Relative Motion in One Dimension", completed: true },
+                    { id: 'ph-1-2', title: "Newton's Laws of Motion", completed: true },
+                    { id: 'ph-1-3', title: 'Work, Energy and Power', completed: true },
+                    { id: 'ph-1-4', title: 'Circular Motion', completed: false, weak: true },
                 ]
             },
             {
@@ -159,9 +160,10 @@ export const SUBJECTS_DATA: Subject[] = [
             {
                 id: 'ph-3', title: 'Electromagnetism', completed: false,
                 topics: [
-                    { id: 'ph-3-1', title: "Coulomb's Law & Electric Field", completed: false },
-                    { id: 'ph-3-2', title: 'Magnetic Force', completed: false, weak: true },
-                    { id: 'ph-3-3', title: 'Electromagnetic Induction', completed: false },
+                    { id: 'ph-3-1', title: "Moving Coil Galvanometer", completed: false },
+                    { id: 'ph-3-2', title: "Coulomb's Law & Electric Field", completed: false },
+                    { id: 'ph-3-3', title: 'Magnetic Force', completed: false, weak: true },
+                    { id: 'ph-3-4', title: 'Electromagnetic Induction', completed: false },
                 ]
             }
         ]

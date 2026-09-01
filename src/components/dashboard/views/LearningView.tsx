@@ -1,59 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useApp, Subject, Chapter, Topic } from '@/context/AppContext';
-
-// ── AI Explanation Panel ──────────────────────────────────────────────────────
-
-function TopicExplanation({ topic, subject }: { topic: Topic; subject: Subject }) {
-    const [loading, setLoading] = useState(false);
-    const [explanation, setExplanation] = useState('');
-    const [shown, setShown] = useState(false);
-
-    const generate = async () => {
-        setLoading(true);
-        await new Promise(r => setTimeout(r, 1500));
-        setExplanation(
-            `🎓 **AI Explanation: ${topic.title}**\n\nHere's a comprehensive breakdown of this ${subject.name} topic:\n\n` +
-            `**Core Concept:**\n${topic.title} is fundamental to ${subject.name}. The key principles involve systematic analysis and application of core ideas.\n\n` +
-            `**Key Points:**\n• ${topic.title} follows from first principles\n• Step-by-step reasoning is essential\n• Real-world applications are numerous\n• Common mistake: rushing through basics\n\n` +
-            `**Example Problem:**\nApplying concepts from ${topic.title} we can derive meaningful results. Practice reinforces understanding.\n\n` +
-            `**Pro tip:** Try at least 5 practice problems on this topic to solidify your knowledge.`
-        );
-        setLoading(false);
-        setShown(true);
-    };
-
-    return (
-        <div style={{ marginTop: 16 }}>
-            {!shown ? (
-                <button className="btn btn-primary" onClick={generate} disabled={loading}>
-                    {loading ? <><span className="loading-spinner" /> Generating AI Explanation...</> : '🤖 Get AI Explanation'}
-                </button>
-            ) : (
-                <div style={{
-                    padding: '20px',
-                    background: 'rgba(99,102,241,0.08)',
-                    border: '1px solid rgba(99,102,241,0.25)',
-                    borderRadius: 'var(--radius-lg)',
-                    animation: 'fade-in 0.4s ease',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                        <span style={{ fontSize: 24 }}>🤖</span>
-                        <span style={{ fontWeight: 700, color: 'var(--primary-300)' }}>AI Explanation</span>
-                        <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={() => setShown(false)}>✕</button>
-                    </div>
-                    <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                        {explanation}
-                    </div>
-                    <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-                        <button className="btn btn-secondary btn-sm">📌 Save Note</button>
-                        <button className="btn btn-secondary btn-sm">🎯 Practice This</button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
+import { useApp } from '@/context/AppContext';
+import TopicLessonView from './TopicLessonView';
 
 // ── Breadcrumb helper ──────────────────────────────────────────────────────────
 
@@ -99,54 +46,27 @@ export default function LearningView() {
         setLearningSubject(null);
     };
 
-    // ── Topic View ────────────────────────────────────────────────────────────
+    // ── Topic View — Full AI Lesson ───────────────────────────────────────────
     if (selectedTopic && selectedChapter) {
         return (
-            <div>
-                {/* Breadcrumb */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-                    <Crumb label={`${subject.emoji} ${subject.name}`} onClick={clearDrilldown} />
-                    <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>›</span>
-                    <Crumb label={selectedChapter.title} onClick={() => setSelectedTopic(null)} />
-                    <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>›</span>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 13 }}>{selectedTopic.title}</span>
-                </div>
-
-                <div style={{
-                    padding: '28px',
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-xl)',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
-                        <div style={{ fontSize: 40 }}>{subject.emoji}</div>
-                        <div>
-                            <h1 className="heading-xl">{selectedTopic.title}</h1>
-                            <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{subject.name} · {selectedChapter.title}</div>
-                        </div>
-                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                            {selectedTopic.weak && <span className="badge badge-danger">⚠️ Weak Area</span>}
-                            {selectedTopic.completed && <span className="badge badge-success">✅ Completed</span>}
-                        </div>
-                    </div>
-
-                    <div className="divider" />
-
-                    <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 20 }}>
-                        This topic covers the fundamental concepts of <strong>{selectedTopic.title}</strong> within {subject.name}. Mastering this will help you solve related problems and understand advanced topics.
-                    </p>
-
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-                        <div className="badge badge-primary">📚 {subject.name}</div>
-                        <div className="badge badge-primary">📖 {selectedChapter.title}</div>
-                        <div className={`badge ${selectedTopic.completed ? 'badge-success' : 'badge-warning'}`}>
-                            {selectedTopic.completed ? '✅ Completed' : '🔄 In Progress'}
-                        </div>
-                    </div>
-
-                    <TopicExplanation topic={selectedTopic} subject={subject} />
-                </div>
-            </div>
+            <TopicLessonView
+                topic={selectedTopic.title}
+                chapter={selectedChapter.title}
+                subjectId={subject.id}
+                subjectName={subject.name}
+                subjectEmoji={subject.emoji}
+                topicCompleted={selectedTopic.completed}
+                topicWeak={selectedTopic.weak}
+                onBack={() => setSelectedTopic(null)}
+                onPractice={() => {
+                    setSelectedTopic(null);
+                    setSelectedChapter(null);
+                }}
+                onAsk={() => {
+                    setSelectedTopic(null);
+                    setSelectedChapter(null);
+                }}
+            />
         );
     }
 

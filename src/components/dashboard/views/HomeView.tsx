@@ -7,9 +7,7 @@ export default function HomeView() {
     if (!activeSubject) {
         return (
             <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-                <div style={{ fontSize: 64, marginBottom: 16 }}>📚</div>
-                <h2 className="heading-xl" style={{ marginBottom: 12 }}>No active subject selected</h2>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>Select a subject to get started.</p>
+                <h2 className="heading-xl" style={{ marginBottom: 12 }}>No subject selected</h2>
                 <button className="btn btn-primary btn-lg" onClick={changeSubject}>Choose a Subject →</button>
             </div>
         );
@@ -19,139 +17,117 @@ export default function HomeView() {
     const weakTopics = progress.weakTopics.filter(w =>
         w.subject.toLowerCase() === activeSubject.name.toLowerCase()
     );
-
-    // Find first incomplete chapter and topic
     const continueChapter = activeSubject.chapters.find(c => !c.completed);
     const continueTopic = continueChapter?.topics.find(t => !t.completed);
-
-    // Count completed  
     const totalTopics = activeSubject.chapters.reduce((a, c) => a + c.topics.length, 0);
     const completedTopics = activeSubject.chapters.reduce((a, c) => a + c.topics.filter(t => t.completed).length, 0);
 
     return (
         <div>
-            {/* ── Hero Banner ─────────────────────────────────────────────────────── */}
+            {/* ── Hero ──────────────────────────────────────────────────────── */}
             <div style={{
-                background: `linear-gradient(135deg, ${activeSubject.color}18 0%, ${activeSubject.color}08 50%, transparent 100%)`,
-                border: `1px solid ${activeSubject.color}30`,
-                borderRadius: 'var(--radius-xl)',
                 padding: '32px 36px',
+                background: 'var(--stone-800)',
+                borderRadius: 'var(--radius-xl)',
                 marginBottom: 24,
                 position: 'relative',
                 overflow: 'hidden',
             }}>
-                {/* Decorative glow */}
+                {/* Decorative texture */}
                 <div style={{
-                    position: 'absolute', top: -60, right: -60,
-                    width: 220, height: 220,
-                    background: `radial-gradient(circle, ${activeSubject.color}25, transparent)`,
-                    borderRadius: '50%',
-                    pointerEvents: 'none',
+                    position: 'absolute', inset: 0, pointerEvents: 'none',
+                    backgroundImage: 'radial-gradient(ellipse 70% 60% at 90% 50%, rgba(61,84,69,0.3) 0%, transparent 60%)',
                 }} />
 
                 <div style={{ position: 'relative' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+                    <div className="eyebrow" style={{ color: 'rgba(247,242,232,0.4)', marginBottom: 10 }}>
+                        Current Subject
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-                                <div style={{
-                                    width: 52, height: 52, borderRadius: 14,
-                                    background: activeSubject.gradient,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: 26,
-                                    boxShadow: `0 4px 16px ${activeSubject.color}50`,
-                                }}>{activeSubject.emoji}</div>
-                                <div>
-                                    <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
-                                        Current Subject
-                                    </div>
-                                    <h1 className="heading-xl">{activeSubject.name}</h1>
-                                </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                                <span style={{ fontSize: 44 }}>{activeSubject.emoji}</span>
+                                <h1 style={{
+                                    fontFamily: 'Playfair Display, serif',
+                                    fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
+                                    fontWeight: 600,
+                                    color: 'var(--cream-50)',
+                                    letterSpacing: '-0.015em',
+                                    lineHeight: 1.1,
+                                }}>
+                                    {activeSubject.name}
+                                </h1>
                             </div>
-                            <p style={{ color: 'var(--text-secondary)', maxWidth: 460, lineHeight: 1.6 }}>
-                                Welcome back, <strong style={{ color: 'var(--text-primary)' }}>{user?.name?.split(' ')[0]}</strong>!
-                                You've completed <strong style={{ color: 'var(--text-primary)' }}>{completedTopics}/{totalTopics}</strong> topics.{' '}
-                                {completedTopics < totalTopics ? "Let's keep going! 🎯" : "Amazing! You've covered everything! 🏆"}
+                            <p style={{ color: 'rgba(247,242,232,0.55)', fontSize: 14, lineHeight: 1.65, maxWidth: 440 }}>
+                                Welcome back, <strong style={{ color: 'var(--cream-50)' }}>{user?.name?.split(' ')[0]}</strong>.
+                                You've completed <strong style={{ color: 'var(--cream-50)' }}>{completedTopics} of {totalTopics}</strong> topics.
+                                {completedTopics < totalTopics ? " Keep going." : " Great work!"}
                             </p>
                         </div>
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                            <button className="btn btn-primary" onClick={() => setCurrentView('practice')}>
-                                ✍️ Start Practice
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                            <button className="btn btn-secondary" onClick={() => setCurrentView('practice')}
+                                style={{ color: 'var(--cream-50)', borderColor: 'rgba(247,242,232,0.25)', background: 'rgba(247,242,232,0.08)' }}>
+                                Start Practice
                             </button>
-                            <button className="btn btn-secondary" onClick={() => setCurrentView('ai')}>
-                                🤖 Ask AI
+                            <button className="btn btn-ghost" onClick={() => setCurrentView('ai')}
+                                style={{ color: 'rgba(247,242,232,0.65)', fontSize: 12 }}>
+                                Ask AI
                             </button>
-                            <button
-                                className="btn btn-ghost"
-                                onClick={changeSubject}
-                                style={{ fontSize: 12 }}
-                            >
-                                🔄 Change Subject
+                            <button className="btn btn-ghost" onClick={changeSubject}
+                                style={{ color: 'rgba(247,242,232,0.4)', fontSize: 11 }}>
+                                ⇄ Change
                             </button>
                         </div>
                     </div>
 
                     {/* Progress bar */}
-                    <div style={{ maxWidth: 500 }}>
+                    <div style={{ marginTop: 24, maxWidth: 420 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{activeSubject.name} Progress</span>
-                            <span style={{ fontSize: 13, fontWeight: 700 }}>{activeSubject.progress}%</span>
+                            <span style={{ fontSize: 11, color: 'rgba(247,242,232,0.45)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                                Progress
+                            </span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--cream-50)' }}>{activeSubject.progress}%</span>
                         </div>
-                        <div className="progress-container" style={{ height: 8 }}>
-                            <div className="progress-bar" style={{ width: `${activeSubject.progress}%`, background: activeSubject.gradient }} />
+                        <div style={{ height: 3, background: 'rgba(247,242,232,0.12)', borderRadius: 100, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${activeSubject.progress}%`, background: 'rgba(247,242,232,0.5)', borderRadius: 100, transition: 'width 1s var(--ease-out)' }} />
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* ── Stats Row ────────────────────────────────────────────────────────── */}
+            {/* ── Stats ─────────────────────────────────────────────────────── */}
             <div className="grid-4 stagger-children" style={{ marginBottom: 24 }}>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: `${activeSubject.color}20` }}>🏆</div>
-                    <div className="stat-value" style={{ background: activeSubject.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        {mastery}%
+                {[
+                    { icon: '◎', label: `${activeSubject.name} Mastery`, value: `${mastery}%` },
+                    { icon: '◈', label: 'Day Streak', value: `${progress.streak}` },
+                    { icon: '◉', label: 'Topics Done', value: `${completedTopics}/${totalTopics}` },
+                    { icon: '◇', label: 'Accuracy', value: `${progress.accuracy}%` },
+                ].map(s => (
+                    <div key={s.label} className="stat-card">
+                        <div style={{
+                            fontSize: 11, fontWeight: 600, color: 'var(--text-muted)',
+                            letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14,
+                        }}>{s.label}</div>
+                        <div className="stat-value">{s.value}</div>
                     </div>
-                    <div className="stat-label">{activeSubject.name} Mastery</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'rgba(245,158,11,0.15)' }}>🔥</div>
-                    <div className="stat-value" style={{ background: 'var(--grad-warning)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        {progress.streak}
-                    </div>
-                    <div className="stat-label">Day Streak</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'rgba(16,185,129,0.15)' }}>📖</div>
-                    <div className="stat-value" style={{ background: 'var(--grad-success)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        {completedTopics}/{totalTopics}
-                    </div>
-                    <div className="stat-label">Topics Completed</div>
-                </div>
-                <div className="stat-card">
-                    <div className="stat-icon" style={{ background: 'rgba(99,102,241,0.15)' }}>🎯</div>
-                    <div className="stat-value">
-                        {progress.accuracy}%
-                    </div>
-                    <div className="stat-label">Accuracy Rate</div>
-                </div>
+                ))}
             </div>
 
-            <div className="grid-2" style={{ gap: 24 }}>
-                {/* Left column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="grid-2" style={{ gap: 20 }}>
+                {/* Left */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* Continue Learning */}
                     {continueTopic && continueChapter && (
                         <div style={{
-                            padding: '20px 24px',
-                            background: 'var(--bg-card)',
+                            padding: '22px 24px',
+                            background: 'var(--cream-50)',
                             border: '1px solid var(--border-subtle)',
                             borderRadius: 'var(--radius-xl)',
                         }}>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: 10 }}>
-                                📖 Continue Learning
-                            </div>
-                            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{continueChapter.title}</h3>
-                            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-                                Next: <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{continueTopic.title}</span>
+                            <div className="eyebrow" style={{ marginBottom: 12 }}>Continue Learning</div>
+                            <h3 className="heading-serif-sm" style={{ marginBottom: 5 }}>{continueChapter.title}</h3>
+                            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                                Next up: <span style={{ color: 'var(--stone-800)', fontWeight: 500 }}>{continueTopic.title}</span>
                             </p>
                             <button className="btn btn-primary btn-sm" onClick={() => setCurrentView('learning')}>
                                 Continue →
@@ -159,16 +135,18 @@ export default function HomeView() {
                         </div>
                     )}
 
-                    {/* Chapters overview */}
+                    {/* Chapters */}
                     <div style={{
-                        padding: '20px 24px',
-                        background: 'var(--bg-card)',
+                        padding: '22px 24px',
+                        background: 'var(--cream-50)',
                         border: '1px solid var(--border-subtle)',
                         borderRadius: 'var(--radius-xl)',
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                            <h2 className="heading-md">{activeSubject.name} Chapters</h2>
-                            <button className="btn btn-ghost btn-sm" onClick={() => setCurrentView('learning')}>View all →</button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                            <h2 className="heading-md">Chapters</h2>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setCurrentView('learning')} style={{ fontSize: 12 }}>
+                                View all →
+                            </button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             {activeSubject.chapters.map((ch, i) => {
@@ -180,35 +158,23 @@ export default function HomeView() {
                                         onClick={() => setCurrentView('learning')}
                                         style={{
                                             padding: '12px 14px',
-                                            background: 'rgba(255,255,255,0.03)',
+                                            background: 'var(--cream-100)',
                                             border: '1px solid var(--border-subtle)',
                                             borderRadius: 'var(--radius-md)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 12,
                                             cursor: 'pointer',
                                             transition: 'border-color 0.15s',
                                         }}
-                                        onMouseEnter={e => (e.currentTarget.style.borderColor = activeSubject.color + '60')}
+                                        onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--stone-800)')}
                                         onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-subtle)')}
                                     >
-                                        <div style={{
-                                            width: 32, height: 32, borderRadius: 8,
-                                            background: ch.completed ? 'var(--grad-success)' : activeSubject.gradient,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: 14, fontWeight: 700, color: 'white', flexShrink: 0,
-                                            opacity: ch.completed ? 1 : 0.85,
-                                        }}>
-                                            {ch.completed ? '✓' : i + 1}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--stone-800)' }}>
+                                                {ch.completed ? '✓ ' : ''}{ch.title}
+                                            </span>
+                                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{done}/{ch.topics.length}</span>
                                         </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                                                <span style={{ fontSize: 13, fontWeight: 600 }}>{ch.title}</span>
-                                                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{done}/{ch.topics.length}</span>
-                                            </div>
-                                            <div className="progress-container" style={{ height: 3 }}>
-                                                <div className="progress-bar" style={{ width: `${pct}%`, background: activeSubject.gradient }} />
-                                            </div>
+                                        <div className="progress-container" style={{ height: 3 }}>
+                                            <div className="progress-bar" style={{ width: `${pct}%` }} />
                                         </div>
                                     </div>
                                 );
@@ -217,96 +183,79 @@ export default function HomeView() {
                     </div>
                 </div>
 
-                {/* Right column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* Right */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* AI Recommendation */}
                     <div style={{
-                        padding: '20px 24px',
-                        background: `linear-gradient(135deg, ${activeSubject.color}12, rgba(99,102,241,0.06))`,
-                        border: `1px solid ${activeSubject.color}25`,
+                        padding: '22px 24px',
+                        background: 'var(--sage-100)',
+                        border: '1px solid var(--sage-200)',
                         borderRadius: 'var(--radius-xl)',
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                            <span style={{ fontSize: 24 }}>🤖</span>
-                            <div>
-                                <div style={{ fontWeight: 700, fontSize: 14 }}>AI Recommendation</div>
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Personalized for {activeSubject.name}</div>
-                            </div>
-                        </div>
-                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 14 }}>
+                        <div className="eyebrow" style={{ color: 'var(--sage-700)', marginBottom: 10 }}>AI Insight</div>
+                        <h3 className="heading-md" style={{ marginBottom: 10 }}>
+                            {weakTopics.length > 0 ? `${weakTopics.length} weak area${weakTopics.length > 1 ? 's' : ''} detected` : 'Solid progress!'}
+                        </h3>
+                        <p style={{ fontSize: 13, color: 'var(--stone-600)', lineHeight: 1.65, marginBottom: 16 }}>
                             {weakTopics.length > 0
-                                ? <>You have <strong style={{ color: '#fcd34d' }}>{weakTopics.length} weak area{weakTopics.length > 1 ? 's' : ''}</strong> in {activeSubject.name}. Focus on <strong style={{ color: 'var(--primary-300)' }}>{weakTopics[0].topic}</strong> today — it's your biggest gap.</>
-                                : <>Your {activeSubject.name} mastery is at <strong style={{ color: '#6ee7b7' }}>{mastery}%</strong>! Keep up the great work and aim for 90%+ this week.</>}
+                                ? <>Focus on <strong>{weakTopics[0].topic}</strong> today — it's your biggest gap in {activeSubject.name}.</>
+                                : <>Your {activeSubject.name} mastery is at <strong>{mastery}%</strong>. Aim for 90%+ this week.</>}
                         </p>
-                        <button className="btn btn-primary btn-sm" onClick={() => setCurrentView('ai')}>
-                            🎯 Get Study Plan
+                        <button className="btn btn-sage btn-sm" onClick={() => setCurrentView('ai')}>
+                            Get Study Plan →
                         </button>
                     </div>
 
                     {/* Today's Practice */}
                     <div style={{
-                        padding: '20px 24px',
-                        background: 'var(--bg-card)',
+                        padding: '22px 24px',
+                        background: 'var(--cream-50)',
                         border: '1px solid var(--border-subtle)',
                         borderRadius: 'var(--radius-xl)',
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                            <h2 className="heading-md">✍️ Today's Practice</h2>
-                            <button className="btn btn-ghost btn-sm" onClick={() => setCurrentView('practice')}>Start →</button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <h2 className="heading-md">Today's Practice</h2>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setCurrentView('practice')} style={{ fontSize: 12 }}>Start →</button>
                         </div>
                         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 14 }}>
-                            5 recommended <strong>{activeSubject.name}</strong> questions tailored to your weak areas.
+                            5 curated <strong style={{ color: 'var(--stone-800)' }}>{activeSubject.name}</strong> questions targeting your weak spots.
                         </p>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                            {(['Easy', 'Medium', 'Hard'] as const).map(diff => (
-                                <div key={diff} style={{
-                                    flex: 1,
-                                    padding: '10px',
-                                    background: 'rgba(255,255,255,0.03)',
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                            {[['Easy', '2'], ['Medium', '2'], ['Hard', '1']].map(([d, n]) => (
+                                <div key={d} style={{
+                                    flex: 1, padding: '10px',
+                                    background: 'var(--cream-200)',
                                     border: '1px solid var(--border-subtle)',
                                     borderRadius: 'var(--radius-md)',
                                     textAlign: 'center',
                                 }}>
-                                    <div style={{ fontSize: 15, fontWeight: 700 }}>
-                                        {diff === 'Easy' ? '2' : diff === 'Medium' ? '2' : '1'}
-                                    </div>
-                                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{diff}</div>
+                                    <div style={{ fontSize: 16, fontFamily: 'Playfair Display, serif', fontWeight: 700 }}>{n}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{d}</div>
                                 </div>
                             ))}
                         </div>
-                        <button className="btn btn-primary w-full" style={{ marginTop: 14 }} onClick={() => setCurrentView('practice')}>
-                            Start Today's Quiz
+                        <button className="btn btn-primary w-full" onClick={() => setCurrentView('practice')}>
+                            Start Quiz
                         </button>
                     </div>
 
-                    {/* Weak Topics — subject filtered */}
+                    {/* Weak Topics */}
                     {weakTopics.length > 0 && (
                         <div style={{
-                            padding: '20px 24px',
-                            background: 'var(--bg-card)',
-                            border: '1px solid var(--border-subtle)',
+                            padding: '22px 24px',
+                            background: 'var(--terra-100)',
+                            border: '1px solid rgba(139,74,53,0.15)',
                             borderRadius: 'var(--radius-xl)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                                <h2 className="heading-md">⚠️ Weak Areas</h2>
-                                <button className="btn btn-ghost btn-sm" onClick={() => setCurrentView('progress')}>View →</button>
-                            </div>
+                            <div className="eyebrow" style={{ color: 'var(--terra-600)', marginBottom: 12 }}>Weak Areas</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 {weakTopics.map((wt, i) => (
-                                    <div key={i} style={{
-                                        padding: '10px 14px',
-                                        background: 'rgba(239,68,68,0.06)',
-                                        border: '1px solid rgba(239,68,68,0.15)',
-                                        borderRadius: 'var(--radius-md)',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                    }}>
-                                        <div>
-                                            <div style={{ fontSize: 13, fontWeight: 500 }}>{wt.topic}</div>
-                                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{wt.subject}</div>
-                                        </div>
-                                        <button className="btn btn-primary btn-sm" onClick={() => setCurrentView('practice')}>
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: 13, color: 'var(--stone-700)', fontWeight: 400 }}>{wt.topic}</span>
+                                        <button className="btn btn-sm" style={{
+                                            background: 'var(--terra-600)', color: 'var(--cream-50)',
+                                            border: 'none', fontSize: 11, padding: '5px 12px',
+                                        }} onClick={() => setCurrentView('practice')}>
                                             Practice
                                         </button>
                                     </div>
@@ -317,20 +266,21 @@ export default function HomeView() {
 
                     {/* Streak */}
                     <div style={{
-                        padding: '18px 24px',
-                        background: 'var(--bg-card)',
+                        padding: '20px 24px',
+                        background: 'var(--cream-50)',
                         border: '1px solid var(--border-subtle)',
                         borderRadius: 'var(--radius-xl)',
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                            <h2 className="heading-md">🔥 Streak</h2>
-                            <span style={{ fontSize: 18, fontWeight: 800 }} className="text-gradient">{progress.streak} days</span>
+                            <h2 className="heading-md">Study Streak</h2>
+                            <span style={{
+                                fontFamily: 'Playfair Display, serif',
+                                fontWeight: 600, fontSize: 18, color: 'var(--stone-800)',
+                            }}>{progress.streak} days</span>
                         </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                             {progress.studyDays.map((active, i) => (
-                                <div key={i} className={`streak-tile ${active ? 'active' : 'inactive'}`} title={active ? 'Studied!' : 'No study'}>
-                                    {active ? '🔥' : ''}
-                                </div>
+                                <div key={i} className={`streak-tile ${active ? 'active' : 'inactive'}`} />
                             ))}
                         </div>
                     </div>

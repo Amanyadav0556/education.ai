@@ -84,7 +84,7 @@ export default function Sidebar() {
                             </div>
                         )}
                         {!sidebarCollapsed && (
-                            <span style={{ fontSize: 12, color: 'rgba(247,242,232,0.35)', flexShrink: 0, fontSize: '11px' }}>⇄</span>
+                            <span style={{ fontSize: '11px', color: 'rgba(247,242,232,0.35)', flexShrink: 0 }}>⇄</span>
                         )}
                     </button>
                 </div>
@@ -114,7 +114,6 @@ export default function Sidebar() {
                                     background: currentView === item.id ? 'var(--cream-50)' : 'var(--stone-400)',
                                     display: 'inline-block',
                                     marginRight: sidebarCollapsed ? 0 : 0,
-                                    flexShrink: 0,
                                 }} />
                                 {!sidebarCollapsed && <span>{item.label}</span>}
                             </button>

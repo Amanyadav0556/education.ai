@@ -13,6 +13,11 @@ export type SimulationId =
     | 'wave-interference'
     | 'projectile'
     | 'quadratic-grapher'
+    | 'electrolysis-water'
+    | 'india-map'
+    | 'ww2-timeline'
+    | 'tense-timeline'
+    | 'heart-rate-zones'
     | 'none';
 
 interface SimulationEntry {
@@ -116,6 +121,97 @@ const SIMULATION_REGISTRY: SimulationEntry[] = [
             'ballistic', 'kinematics',
         ],
         subjectFilter: ['physics'],
+    },
+    {
+        id: 'electrolysis-water',
+        label: 'Electrolysis of Water Simulator',
+        weight: 0.9,
+        keywords: [
+            'electrolysis', 'electrolysis of water', 'anode', 'cathode',
+            'redox', 'oxidation reduction', 'oxidation and reduction',
+            'electrochemistry', 'electrochemical', 'ionization', 'ionic reaction',
+            'decomposition of water', 'faraday law', "faraday's law",
+        ],
+        subjectFilter: ['chemistry'],
+    },
+    {
+        id: 'electrolysis-water',
+        label: 'Electrolysis of Water Simulator',
+        weight: 0.2,
+        keywords: ['chemistry', 'chemical'],
+        subjectFilter: ['chemistry'],
+    },
+    {
+        id: 'india-map',
+        label: 'Interactive India Map',
+        weight: 0.9,
+        keywords: [
+            'map', 'indian states', 'states of india', 'geography of india',
+            'political map', 'physical map', 'state capital', 'capitals',
+            'population distribution', 'union territory', 'union territories',
+        ],
+        subjectFilter: ['geography'],
+    },
+    {
+        id: 'india-map',
+        label: 'Interactive India Map',
+        weight: 0.2,
+        keywords: ['geography', 'geographical'],
+        subjectFilter: ['geography'],
+    },
+    {
+        id: 'ww2-timeline',
+        label: 'Interactive History Timeline',
+        weight: 0.9,
+        keywords: [
+            'timeline', 'chronology', 'sequence of events', 'world war',
+            'world war ii', 'world war 2', 'historical events', 'era',
+            'freedom struggle', 'independence movement', 'revolution',
+        ],
+        subjectFilter: ['history'],
+    },
+    {
+        id: 'ww2-timeline',
+        label: 'Interactive History Timeline',
+        weight: 0.2,
+        keywords: ['history', 'historical'],
+        subjectFilter: ['history'],
+    },
+    {
+        id: 'tense-timeline',
+        label: 'Interactive Tense Explorer',
+        weight: 0.9,
+        keywords: [
+            'tense', 'tenses', 'verb form', 'past tense', 'present tense',
+            'future tense', 'continuous tense', 'perfect tense', 'grammar',
+            'simple present', 'simple past', 'simple future',
+        ],
+        subjectFilter: ['english'],
+    },
+    {
+        id: 'tense-timeline',
+        label: 'Interactive Tense Explorer',
+        weight: 0.2,
+        keywords: ['english', 'language'],
+        subjectFilter: ['english'],
+    },
+    {
+        id: 'heart-rate-zones',
+        label: 'Heart Rate Training Zones',
+        weight: 0.9,
+        keywords: [
+            'heart rate', 'fitness', 'training zones', 'cardio',
+            'exercise intensity', 'aerobic', 'anaerobic', 'endurance training',
+            'pulse rate', 'target heart rate', 'physical fitness',
+        ],
+        subjectFilter: ['sports'],
+    },
+    {
+        id: 'heart-rate-zones',
+        label: 'Heart Rate Training Zones',
+        weight: 0.2,
+        keywords: ['sports', 'physical education', 'pe'],
+        subjectFilter: ['sports'],
     },
 ];
 

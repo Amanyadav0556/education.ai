@@ -9,6 +9,11 @@ import PendulumSim from './PendulumSim';
 import WaveInterferenceSim from './WaveInterferenceSim';
 import ProjectileSim from './ProjectileSim';
 import QuadraticGrapherSim from './QuadraticGrapherSim';
+import ElectrolysisSim from './ElectrolysisSim';
+import IndiaMapSim from './IndiaMapSim';
+import WW2TimelineSim from './WW2TimelineSim';
+import TenseTimelineSim from './TenseTimelineSim';
+import HeartRateZonesSim from './HeartRateZonesSim';
 
 export default function SimulationViewer({ simId }: { simId: SimulationId }) {
     switch (simId) {
@@ -28,6 +33,16 @@ export default function SimulationViewer({ simId }: { simId: SimulationId }) {
             return <ProjectileSim />;
         case 'quadratic-grapher':
             return <QuadraticGrapherSim />;
+        case 'electrolysis-water':
+            return <ElectrolysisSim />;
+        case 'india-map':
+            return <IndiaMapSim />;
+        case 'ww2-timeline':
+            return <WW2TimelineSim />;
+        case 'tense-timeline':
+            return <TenseTimelineSim />;
+        case 'heart-rate-zones':
+            return <HeartRateZonesSim />;
         default:
             return null;
     }
